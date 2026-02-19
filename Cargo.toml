@@ -3,4 +3,11 @@ name = "quick-noise"
 version = "0.1.0"
 edition = "2024"
 
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+
 [dependencies]
+num-traits = "0.2.19"
+image = "0.25.9"

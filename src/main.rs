@@ -1,13 +1,26 @@
-mod random;
+#![feature(portable_simd)]
+#![feature(generic_const_exprs)]
 
-use random::Random;
+mod simd {
+    pub mod arch_simd;
+    pub mod simd_array;
+}
+
+mod math {
+    pub mod random;
+    pub mod vec;
+}
+
+mod noise {
+    pub mod perlin;
+}
+
+use crate::noise::perlin::Perlin;
 
 fn main() {
+    // Perlin::profile_noise_2d();
 
-    let rand = Random::new(0);
-    
-    for i in 0..10 {
-        let value = rand.mix_u64(i);
-        println!("{i}: {:064b}", value);
-    }
+    let mut perlin = Perlin::new(0);
+    perlin.write_height_map(String::from("testyTest.png"), 32, 4, 64.0, 2.0, 0.5);
+    // perlin.write_height_map(String::from("testyTest.png"), 32, 6, 128.0, 2.0, 0.5);
 }

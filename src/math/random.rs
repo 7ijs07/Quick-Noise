@@ -1,5 +1,9 @@
 // Primitive but fast module for generating random-looking outputs.
 
+use std::ops::{Shr, BitXor, Mul};
+use std::simd::{Simd, SimdElement};
+use crate::simd::arch_simd::ArchSimd;
+
 pub struct Random {
     core_seed: u64,
     channel_seed: u64
@@ -16,11 +20,11 @@ impl Random {
         }
     }
 
-    pub fn set_channel(&mut self) {
-        self.channel_seed = Self::static_mix_u64(self.core_seed)
+    pub fn set_channel(&mut self, data: u64) {
+        self.channel_seed = Self::static_mix_u64(self.core_seed ^ data);
     }
 
-    // --- Raw Mixers ---
+    // === Raw Mixers ===
 
     pub fn mix_u64(&self, data: u64) -> u64 {
         Self::mix_u64_impl(data ^ self.channel_seed)
@@ -30,11 +34,18 @@ impl Random {
         Self::mix_u64_pair_impl(data1 ^ self.channel_seed, data2)
     }
 
+    pub fn mix_i32_simd_pair(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>) -> ArchSimd<u32> {
+        let d1 = unsafe { std::mem::transmute::<ArchSimd<i32>, ArchSimd<u32>>(data1) };
+        let d2 = unsafe { std::mem::transmute::<ArchSimd<i32>, ArchSimd<u32>>(data2) };
+
+        Self::mix_u32_pair_simd_impl(d1, d2)
+    }
+
     pub fn mix_u32(&self, data: u32) -> u32 {
         Self::mix_bits_32_impl(data ^ self.core_seed as u32)
     }
 
-    // --- Mix Variants ---
+    // === Mix Variants ===
 
     pub fn mix_i32_pair(&self, data1: i32, data2: i32) -> u64 {
         self.mix_u64(Self::combine_i32_pair(data1, data2))
@@ -45,7 +56,7 @@ impl Random {
         self.mix_u64_pair(concat_data, (data3 as u64) << 32)
     }
     
-    // --- Static Mixers ---
+    // === Static Mixers ===
 
     pub fn static_mix_u64(data: u64) -> u64 {
         Self::mix_u64_impl(data ^ 0x9e3779b97f4a7c15)
@@ -55,13 +66,13 @@ impl Random {
         Self::mix_bits_32_impl(data ^ 0x7f4a7c15)
     }
 
-    // --- Private Helpers ---
+    // === Private Helpers ===
     
     fn combine_i32_pair(data1: i32, data2: i32) -> u64 {
         (data1 as u64) | ((data2 as u64) << 32)
     }
 
-    // --- Bit mixing implementations | From MurmurHash ---
+    // === Bit mixing implementations | From MurmurHash ===
 
     fn mix_u64_impl(mut data: u64) -> u64 {
         data ^= data >> 33;
@@ -71,7 +82,7 @@ impl Random {
         data ^= data >> 33;
         data
     }
-
+    
     fn mix_u64_pair_impl(mut data1: u64, data2: u64) -> u64 {
         data1 ^= data1 >> 33;
         data1 = data1.wrapping_mul(0xff51afd7ed558ccd ^ data2);
@@ -80,7 +91,7 @@ impl Random {
         data1 ^= data1 >> 33;
         data1
     }
-
+    
     fn mix_bits_32_impl(mut data: u32) -> u32 {
         data ^= data >> 16;
         data = data.wrapping_mul(0x85ebca6b);
@@ -88,5 +99,14 @@ impl Random {
         data = data.wrapping_mul(0xc2b2ae35);
         data ^= data >> 16;
         data
+    }
+
+    fn mix_u32_pair_simd_impl(mut data1: ArchSimd<u32>, data2: ArchSimd<u32>) -> ArchSimd<u32> {
+        data1 ^= data1 >> 16;
+        data1 *= ArchSimd::splat(0x85ebca6b) ^ data2;
+        data1 ^= data1 >> 13;
+        data1 *= ArchSimd::splat(0xc2b2ae35) ^ data2;
+        data1 ^= data1 >> 16;
+        data1
     }
 }
