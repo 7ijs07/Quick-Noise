@@ -469,8 +469,9 @@ impl Perlin {
         self.set_gridpoints_2d(tl, tr, grid_start.x, grid_start.y, next_index_offset.y, octave.scale.y, num_loops.y, &distances.y);
 
         let mut x_cur_index: u32 = 0;
+        let mut x_it_float: f32 = 0.0;
         for x_it in 0..num_loops.x {
-            let x_next_index_exact = x_it as f32 * octave.scale.x + next_index_offset.x;
+            let x_next_index_exact = x_it_float * octave.scale.x + next_index_offset.x;
             let x_next_index: u32 = unsafe { x_next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) as u32 };
 
             let x_cur_frac_start = unsafe { distances.x.get_unchecked(x_cur_index as usize) };
@@ -488,6 +489,7 @@ impl Perlin {
 
             if x_next_index == 32 { break; }
             x_cur_index = x_next_index;
+            x_it_float += 1.0;
         }
     }
 
@@ -526,10 +528,10 @@ impl Perlin {
         ];
 
         let mut cur_index: u32 = 0;
+        let mut y_it_float: f32 = 0.0;
         for y_it in 0..y_num_loops {
-            let next_index_exact = y_it as f32 * y_scale + y_next_index_offset;
-            let next_index_int = unsafe { next_index_exact.to_int_unchecked::<u32>() }; // Never negative or NaN.
-            let next_index: u32 = next_index_int.min(ROW_SIZE as u32);
+            let next_index_exact: f32 = y_it_float * y_scale + y_next_index_offset;
+            let next_index: u32 = unsafe { next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) }; // Never negative or NaN.
             let set_amount: u32 = next_index - cur_index;
 
             unsafe {
@@ -544,10 +546,11 @@ impl Perlin {
             }
 
             cur_index = next_index;
+            y_it_float += 1.0;
         }
 
         left.y *= *y_distances;
-        right.y *= *y_distances - PerlinVec::new(1.0);
+        right.y = right.y.mul_sub(*y_distances, right.y); // equivalent to -> right.y *= y_distances - 1.0
     }
 
     #[inline(never)]

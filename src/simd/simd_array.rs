@@ -1,6 +1,6 @@
 use std::fmt;
 use std::mem::MaybeUninit;
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign, Neg};
 use std::simd::prelude::{SimdFloat, SimdPartialOrd};
 use std::simd::{Mask, Simd, SimdElement, StdFloat};
 use crate::simd::simd_array::fmt::Debug;
@@ -14,7 +14,7 @@ macro_rules! impl_simd_array_op {
     ($trait:ident, $assign_trait:ident, $method:ident, $assign_method:ident, $op:tt, $assign_op:tt) => {
         impl<T: SimdInfo, const N: usize> $trait for SimdArray<T, N>
         where
-            [(); T::LANES]:,
+            ArchSimd<T>:,
             T: $trait<Output = T>,
             ArchSimd<T>: $trait<Output = ArchSimd<T>>,
         {
@@ -37,7 +37,7 @@ macro_rules! impl_simd_array_op {
 
         impl<T: SimdInfo, const N: usize> $assign_trait for SimdArray<T, N>
         where
-            [(); T::LANES]:,
+            ArchSimd<T>:,
             T: $assign_trait,
             ArchSimd<T>: $assign_trait,
         {
@@ -199,11 +199,32 @@ impl_simd_array_op!(Sub, SubAssign, sub, sub_assign, -, -=);
 impl_simd_array_op!(Mul, MulAssign, mul, mul_assign, *, *=);
 impl_simd_array_op!(Div, DivAssign, div, div_assign, /, /=);
 
+impl<T: SimdInfo, const N: usize> Neg for SimdArray<T, N>
+where
+    ArchSimd<T>:,
+    T: Neg<Output = T>,
+    ArchSimd<T>: Neg<Output = ArchSimd<T>>,
+{
+    type Output = SimdArray<T, N>;
+    fn neg(self) -> SimdArray<T, N> {
+        let mut result = SimdArray::<T, N>::new_uninit();
+        for i in (0..Self::TAIL_START).step_by(T::LANES) {
+            let data = self.load_simd(i);
+            result.store_simd(i, -data);
+        }
+        if Self::HAS_TAIL {
+            let data = self.load_simd(Self::TAIL_START);
+            result.partial_store_simd(Self::TAIL_START, -data, Self::TAIL_SIZE);
+        }
+        result
+    }
+}
+
 // === Additional Operations ===
 
 impl<T: SimdInfo, const N: usize> SimdArray<T, N>
 where
-    [(); T::LANES]:,
+    ArchSimd<T>:,
 {
     pub fn multiset_many<const M: usize>(arrays: &mut [&mut Self; M], values: &[T; M], mut index: usize, mut amount: isize) {
         let vecs: [ArchSimd<T>; M] = std::array::from_fn(|i| ArchSimd::<T>::splat(values[i]));
@@ -223,7 +244,7 @@ where
 
 impl<T: SimdInfo + NumCast + Debug, const N: usize> SimdArray<T, N>
 where
-    [(); T::LANES]:,
+    ArchSimd<T>:,
     T: Add<Output = T>,
     T: Mul<Output = T>,
     ArchSimd<T>: Add<Output = ArchSimd<T>>,
@@ -280,7 +301,7 @@ where
 
 impl<T: SimdInfo + Float, const N: usize> SimdArray<T, N>
 where
-    [(); T::LANES]:,
+    ArchSimd<T>:,
     ArchSimd<T>: SimdFloat + StdFloat,
     T: Sub<Output = T>,
     ArchSimd<T>: Sub<Output = ArchSimd<T>>,
@@ -304,9 +325,49 @@ where
     }
 }
 
+impl<T: SimdInfo + Float, const N: usize> SimdArray<T, N>
+where
+    ArchSimd<T>:,
+    ArchSimd<T>: SimdFloat + StdFloat,
+{
+    pub fn mul_add(self, mult: Self, offset: Self) -> Self {
+        let mut result = Self::new_uninit();
+        for i in (0..Self::TAIL_START).step_by(T::LANES) {
+            let data_vec = self.load_simd(i);
+            let mult_vec = mult.load_simd(i);
+            let offset_vec = offset.load_simd(i);
+
+            let new_data = data_vec.mul_add(mult_vec, offset_vec);
+            result.store_simd(i, new_data);
+        }
+
+        if Self::HAS_TAIL {
+            let data_vec = self.load_simd(Self::TAIL_START);
+            let mult_vec = mult.load_simd(Self::TAIL_START);
+            let offset_vec = offset.load_simd(Self::TAIL_START);
+
+            let new_data = data_vec.mul_add(mult_vec, offset_vec);
+            result.partial_store_simd(Self::TAIL_START, new_data, Self::TAIL_SIZE);
+        }
+
+        result
+    }
+}
+
+impl<T: SimdInfo + Float, const N: usize> SimdArray<T, N>
+where
+    ArchSimd<T>:,
+    ArchSimd<T>: SimdFloat + StdFloat,
+    ArchSimd<T>: Neg<Output = ArchSimd<T>>,
+{
+    pub fn mul_sub(self, mult: Self, offset: Self) -> Self {
+        self.mul_add(mult, -offset)
+    }
+}
+
 impl<T: SimdInfo + NumCast, const N: usize> SimdArray<T, N>
 where
-    [(); T::LANES]:,
+    ArchSimd<T>:,
     T: Mul<Output = T>,
     T: Add<Output = T>,
     T: Sub<Output = T>,
