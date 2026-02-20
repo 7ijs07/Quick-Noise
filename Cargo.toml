@@ -11,3 +11,4 @@ lto = "fat"
 [dependencies]
 num-traits = "0.2.19"
 image = "0.25.9"
+cfg-if = "1.0.4"
