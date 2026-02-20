@@ -468,19 +468,20 @@ impl Perlin {
         let (tl, tr) = d_vecs.tl_tr_mut();
         self.set_gridpoints_2d(tl, tr, grid_start.x, grid_start.y, next_index_offset.y, octave.scale.y, num_loops.y, &distances.y);
 
-        let mut x_cur_index: usize = 0;
+        let mut x_cur_index: u32 = 0;
         for x_it in 0..num_loops.x {
-            let x_next_index = ((x_it as f32 * octave.scale.x + next_index_offset.x) as u32).min(ROW_SIZE as u32) as usize;
+            let x_next_index_exact = x_it as f32 * octave.scale.x + next_index_offset.x;
+            let x_next_index: u32 = unsafe { x_next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) as u32 };
 
-            let x_cur_frac_start = unsafe { distances.x.get_unchecked(x_cur_index) };
-            let x_chunk_size = x_next_index - x_cur_index;
+            let x_cur_frac_start = unsafe { distances.x.get_unchecked(x_cur_index as usize) };
+            let x_chunk_size: u32 = x_next_index - x_cur_index;
 
             let (bl, br) = d_vecs.bl_br_mut();
             self.set_gridpoints_2d(bl, br, grid_start.x + x_it as i32 + 1, grid_start.y, next_index_offset.y, octave.scale.y, num_loops.y, &distances.y);
         
             Self::compute_noise_from_vecs_2d::<INITIALIZE>(
                 &d_vecs, x_cur_frac_start, increment.x,
-                x_chunk_size, &interpolations, x_cur_index, weight, result
+                x_chunk_size as usize, &interpolations, x_cur_index as usize, weight, result
             );
 
             d_vecs.swap_top_bottom();
@@ -524,10 +525,12 @@ impl Perlin {
             &mut right.x, &mut right.y,
         ];
 
-        let mut cur_index: usize = 0;
+        let mut cur_index: u32 = 0;
         for y_it in 0..y_num_loops {
-            let next_index = ((y_it as f32 * y_scale + y_next_index_offset) as usize).min(ROW_SIZE as usize);
-            let set_amount = next_index - cur_index;
+            let next_index_exact = y_it as f32 * y_scale + y_next_index_offset;
+            let next_index_int = unsafe { next_index_exact.to_int_unchecked::<u32>() }; // Never negative or NaN.
+            let next_index: u32 = next_index_int.min(ROW_SIZE as u32);
+            let set_amount: u32 = next_index - cur_index;
 
             unsafe {
                 let l = grad_array.get_unchecked(y_it as usize) as usize;
@@ -537,7 +540,7 @@ impl Perlin {
                     GRADIENTS_2D.get_unchecked(r).x, GRADIENTS_2D.get_unchecked(r).y,
                 ];
 
-                PerlinVec::multiset_many::<4>(&mut arrays, &values, cur_index, set_amount as isize);
+                PerlinVec::multiset_many::<4>(&mut arrays, &values, cur_index as usize, set_amount as isize);
             }
 
             cur_index = next_index;
