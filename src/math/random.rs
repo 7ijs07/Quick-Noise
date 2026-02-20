@@ -37,8 +37,9 @@ impl Random {
     pub fn mix_i32_simd_pair(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>) -> ArchSimd<u32> {
         let d1 = unsafe { std::mem::transmute::<ArchSimd<i32>, ArchSimd<u32>>(data1) };
         let d2 = unsafe { std::mem::transmute::<ArchSimd<i32>, ArchSimd<u32>>(data2) };
+        let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
 
-        Self::mix_u32_pair_simd_impl(d1, d2)
+        Self::mix_u32_pair_simd_impl(d1 ^ seed_vec, d2)
     }
 
     pub fn mix_u32(&self, data: u32) -> u32 {

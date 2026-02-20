@@ -1,6 +1,7 @@
 use std::sync::LazyLock;
 use std::simd::StdFloat;
 use std::time::Instant;
+use std::simd::num::SimdUint;
 use crate::simd::arch_simd::{ArchSimd, SimdInfo};
 use crate::simd::simd_array::SimdArray;
 use crate::math::vec::{Vec2, Vec3};
@@ -394,7 +395,6 @@ impl Perlin {
         let mut cur_octave = Octave2D::splat(scale, 1.0);
         
         self.single_octave_2d::<true>(&mut result, pos, &cur_octave, weight_coef, channel_seed, octave_offset);
-
         for _ in 1..octaves {
             cur_octave.scale /= lacunarity;
             cur_octave.weight *= persistence;
@@ -502,28 +502,44 @@ impl Perlin {
         y_num_loops: u32,
         y_distances: &PerlinVec,
     ) {
-        let mut left_grad = (self.random_gen.mix_i32_pair(x_start, y_start) % NUM_DIRECTIONS as u64) as usize;
-        let mut cur_index: usize = 0;
+        let iota_vec = ArchSimd::from_array(std::array::from_fn(|i| i as i32));
+        let mut y_vec = ArchSimd::splat(y_start) + iota_vec;
+        let x_vec = ArchSimd::splat(x_start);
+
+        let mut grad_array = SimdArray::<u32, ROW_SIZE>::new_uninit();
+
+        let lane_increment = ArchSimd::splat(f32::LANES as  i32);
+
+        let grad_vec: ArchSimd<u32> = self.random_gen.mix_i32_simd_pair(x_vec, y_vec).cast() & ArchSimd::splat(0xF as u32);
+        grad_array.store_simd(0 as usize, grad_vec);
+
+        for i in (f32::LANES..y_num_loops as usize).step_by(f32::LANES) {
+            y_vec += lane_increment;
+            let grad_vec: ArchSimd<u32> = self.random_gen.mix_i32_simd_pair(x_vec, y_vec) & ArchSimd::splat(0xF as u32);
+            grad_array.store_simd(i as usize, grad_vec);
+        }
 
         let mut arrays = [
             &mut left.x, &mut left.y,
             &mut right.x, &mut right.y,
         ];
 
+        let mut cur_index: usize = 0;
         for y_it in 0..y_num_loops {
             let next_index = ((y_it as f32 * y_scale + y_next_index_offset) as usize).min(ROW_SIZE as usize);
             let set_amount = next_index - cur_index;
 
-            let right_grad = (self.random_gen.mix_i32_pair(x_start, y_start + y_it as i32 + 1) % NUM_DIRECTIONS as u64) as usize;
+            unsafe {
+                let l = grad_array.get_unchecked(y_it as usize) as usize;
+                let r = grad_array.get_unchecked(y_it as usize + 1) as usize;
+                let values = [
+                    GRADIENTS_2D.get_unchecked(l).x, GRADIENTS_2D.get_unchecked(l).y,
+                    GRADIENTS_2D.get_unchecked(r).x, GRADIENTS_2D.get_unchecked(r).y,
+                ];
 
-            let values = [
-                GRADIENTS_2D[left_grad].x, GRADIENTS_2D[left_grad].y,
-                GRADIENTS_2D[right_grad].x, GRADIENTS_2D[right_grad].y,
-            ];
+                PerlinVec::multiset_many::<4>(&mut arrays, &values, cur_index, set_amount as isize);
+            }
 
-            PerlinVec::multiset_many::<4>(&mut arrays, &values, cur_index, set_amount as isize);
-
-            left_grad = right_grad;
             cur_index = next_index;
         }
 
