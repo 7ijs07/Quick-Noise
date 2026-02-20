@@ -125,12 +125,30 @@ pub struct Octave2D {
 }
 
 impl Octave2D {
-    fn new(scale: Vec2<f32>, weight: f32) -> Self {
+    pub fn new(scale: Vec2<f32>, weight: f32) -> Self {
         Self { scale, weight }
     }
 
-    fn splat(scale: f32, weight: f32) -> Self {
+    pub fn splat(scale: f32, weight: f32) -> Self {
         Self { scale: Vec2::<f32>::new(scale, scale), weight }
+    }
+}
+
+impl From<(f32, f32)> for Octave2D {
+    fn from((scale, weight): (f32, f32)) -> Self {
+        Octave2D::new((scale, scale).into(), weight)
+    }
+}
+
+impl From<((f32, f32), f32)> for Octave2D {
+    fn from(((x_scale, y_scale), weight): ((f32, f32), f32)) -> Self {
+        Octave2D::new((x_scale, y_scale).into(), weight)
+    }
+}
+
+impl From<&Octave2D> for Octave2D {
+    fn from(octave: &Octave2D) -> Self {
+        octave.clone()
     }
 }
 
@@ -141,11 +159,11 @@ pub struct Octave3D {
 }
 
 impl Octave3D {
-    fn new(scale: Vec3<f32>, weight: f32) -> Self {
+    pub fn new(scale: Vec3<f32>, weight: f32) -> Self {
         Self { scale, weight }
     }
 
-    fn splat(scale: f32, weight: f32) -> Self {
+    pub fn splat(scale: f32, weight: f32) -> Self {
         Self { scale: Vec3::<f32>::new(scale, scale, scale), weight }
     }
 }
@@ -243,7 +261,7 @@ impl Perlin {
 
     pub fn write_height_map(
         &mut self,
-        path: String,
+        path: &str,
         dimension: usize,
         octaves: u32,
         scale: f32,
@@ -282,6 +300,46 @@ impl Perlin {
         println!("Wrote height map to {path}!");
     }
 
+    pub fn write_height_map_octaves(
+        &mut self,
+        path: &str,
+        dimension: usize,
+        octaves: impl IntoIterator<Item = impl Into<Octave2D>>,
+        channel: i32,
+    ) {
+        let octaves_vec: Vec<Octave2D> = octaves.into_iter().map(Into::into).collect();
+        let mut pixels = Vec::<u8>::new();
+        pixels.resize(dimension * dimension * MAP_SIZE, 0);
+        
+        for x in 0..dimension {
+            let x_offset = x * dimension * MAP_SIZE;
+            for y in 0..dimension {
+                let y_offset = y * ROW_SIZE;
+                let mut noise = self.noise_2d_octaves((x as i32, y as i32).into(), &octaves_vec, 1.0, channel, 0.0);
+
+                noise = (noise + PerlinMap::new(1.0)) * PerlinMap::new(127.5);
+
+                for dx in 0..ROW_SIZE {
+                    let offset = x_offset + y_offset + dx * ROW_SIZE * dimension;
+                    for dy in 0..ROW_SIZE {
+                        pixels[offset + dy] = noise[dx * ROW_SIZE + dy] as u8;
+                    }
+                }
+            }
+        }
+
+        let pixel_dimension = (dimension * ROW_SIZE) as u32;
+        image::save_buffer(
+            &path,
+            &pixels,
+            pixel_dimension,
+            pixel_dimension,
+            image::ColorType::L8
+        ).expect("Failed to write height map!");
+
+        println!("Wrote height map to {path}!");
+    }
+
     pub fn profile_noise_2d() {
         const NUM_LOOPS: usize = 10000000;
         const SAMPLE_SIZE: usize = 1024;
@@ -291,7 +349,7 @@ impl Perlin {
 
         let start = Instant::now();
         for i in 0..NUM_LOOPS {
-            code += perlin.noise_2d((i as i32, i as i32).into(), 1, 32.0, 1.0, 2.0, 0.5, 1, 0.0)[i & 0xFF];
+            code += perlin.noise_2d((i as i32, i as i32).into(), 1, 4.0, 1.0, 2.0, 0.5, 1, 0.0)[i & 0xFF];
         }
         let elapsed = start.elapsed();
         let ms_elapsed = elapsed.as_millis();
@@ -319,7 +377,7 @@ impl Perlin {
         amplitude: f32,
         lacunarity: f32,
         persistence: f32,
-        channel: u32,
+        channel: i32,
         octave_offset: f32,
     ) -> PerlinMap {
         let channel_seed: u64 = Random::static_mix_u64(channel as u64);
@@ -335,13 +393,39 @@ impl Perlin {
 
         let mut cur_octave = Octave2D::splat(scale, 1.0);
         
-        self.single_octave_2d::<true>(&mut result, pos, cur_octave, weight_coef, channel_seed, octave_offset);
+        self.single_octave_2d::<true>(&mut result, pos, &cur_octave, weight_coef, channel_seed, octave_offset);
 
         for _ in 1..octaves {
             cur_octave.scale /= lacunarity;
             cur_octave.weight *= persistence;
 
-            self.single_octave_2d::<false>(&mut result, pos, cur_octave, weight_coef, channel_seed, octave_offset);
+            self.single_octave_2d::<false>(&mut result, pos, &cur_octave, weight_coef, channel_seed, octave_offset);
+        }
+
+        result
+    }
+
+    pub fn noise_2d_octaves(
+        &mut self,
+        pos: Vec2<i32>,
+        octaves: impl IntoIterator<Item = impl Into<Octave2D>>,
+        amplitude: f32,
+        channel: i32,
+        octave_offset: f32,
+    ) -> PerlinMap {
+        let octaves_vec: Vec<Octave2D> = octaves.into_iter().map(Into::into).collect();
+        let channel_seed: u64 = Random::static_mix_u64(channel as u64);
+        let mut result: PerlinMap = PerlinMap::new_uninit();
+
+        let mut weight_sum = 0.0;
+        for octave in &octaves_vec {
+            weight_sum += octave.weight;
+        }
+        let weight_coef = amplitude / weight_sum;
+
+        self.single_octave_2d::<true>(&mut result, pos, &octaves_vec[0], weight_coef, channel_seed, octave_offset);
+        for i in 1..octaves_vec.len() {
+            self.single_octave_2d::<false>(&mut result, pos, &octaves_vec[i], weight_coef, channel_seed, octave_offset);
         }
 
         result
@@ -351,7 +435,7 @@ impl Perlin {
         &mut self,
         result: &mut PerlinMap,
         pos: Vec2<i32>,
-        octave: Octave2D,
+        octave: &Octave2D,
         weight_coef: f32,
         channel_seed: u64,
         octave_offset: f32,
