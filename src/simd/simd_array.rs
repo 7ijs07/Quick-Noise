@@ -154,6 +154,7 @@ impl<T: SimdInfo + fmt::Debug, const N: usize> fmt::Debug for SimdArray<T, N> {
 impl<T: SimdInfo, const N: usize> SimdArray<T, N> {
     #[inline(always)]
     pub fn load_simd(&self, index: usize) -> ArchSimd<T> {
+        debug_assert!(index + T::LANES <= N);
         debug_assert!(index % T::LANES == 0);
         unsafe {
             let ptr = self.data.as_ptr().add(index) as *const T;
@@ -163,6 +164,7 @@ impl<T: SimdInfo, const N: usize> SimdArray<T, N> {
 
     #[inline(always)]
     pub fn store_simd(&mut self, index: usize, vec: ArchSimd<T>) {
+        debug_assert!(index + T::LANES <= N);
         debug_assert!(index % T::LANES == 0);
         unsafe {
             let ptr = self.data.as_mut_ptr().add(index) as *mut T;
@@ -172,7 +174,7 @@ impl<T: SimdInfo, const N: usize> SimdArray<T, N> {
 
     #[inline(always)]
     pub fn partial_store_simd(&mut self, index: usize, vec: ArchSimd<T>, amount: usize) {
-        debug_assert!(index + amount < N);
+        debug_assert!(index + amount <= N);
         let indices = Simd::<i32, { T::LANES }>::from_array(std::array::from_fn(|i| i as i32));
         let amounts = Simd::<i32, { T::LANES }>::splat(amount as i32);
         let mask = amounts.simd_gt(indices).cast::<<T as SimdElement>::Mask>();

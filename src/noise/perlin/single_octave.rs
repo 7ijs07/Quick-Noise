@@ -4,6 +4,7 @@ use crate::noise::perlin::containers::*;
 use crate::math::vec::{Vec2, Vec3};
 
 impl Perlin {
+    // #[inline(never)]
     pub(super) fn single_octave_2d<const INITIALIZE: bool>(
         &mut self,
         result: &mut PerlinMap,
@@ -57,6 +58,8 @@ impl Perlin {
 
             // Identify the current range of x gradients.
             let x_next_index_exact = x_it_scale + next_index_offset.x;
+            
+            debug_assert!(x_next_index_exact >= 0.0 && x_next_index_exact.is_finite());
             let x_next_index: u32 = unsafe { x_next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) as u32 };
 
             let x_cur_frac_start = unsafe { distances.x.get_unchecked(x_cur_index as usize) };

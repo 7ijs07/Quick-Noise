@@ -47,9 +47,11 @@ impl Perlin {
         for y_it in 0..y_num_loops {
 
             // Find range of gradients to set.
-            let next_index_exact: f32 = y_it_scale + y_next_index_offset;
-            let next_index: u32 = unsafe { next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) }; // Never negative or NaN.
-            let set_amount: u32 = next_index - cur_index;
+            let y_next_index_exact: f32 = y_it_scale + y_next_index_offset;
+
+            debug_assert!(y_next_index_exact >= 0.0 && y_next_index_exact.is_finite());
+            let y_next_index: u32 = unsafe { y_next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) }; // Never negative or NaN.
+            let set_amount: u32 = y_next_index - cur_index;
 
             // Set all gradients at once with masked stores.
             unsafe {
@@ -66,7 +68,7 @@ impl Perlin {
                 PerlinVec::multiset_many::<4>(&mut arrays, &values, cur_index as usize, set_amount as isize);
             }
 
-            cur_index = next_index;
+            cur_index = y_next_index;
             y_it_scale += y_scale;
         }
 

@@ -5,7 +5,7 @@ use std::simd::StdFloat;
 use crate::simd::arch_simd::{ArchSimd, SimdInfo, NUM_SIMD_REG};
 
 impl Perlin {
-    #[inline(never)]
+    // #[inline(never)]
     pub(super) fn compute_noise_from_vecs_2d<const INITIALIZE: bool>(
         gradients: &PerlinContainer2D,
         x_frac_start: f32,
