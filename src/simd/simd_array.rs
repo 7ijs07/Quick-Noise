@@ -236,10 +236,27 @@ where
             let amounts = Simd::<i32, {T::LANES}>::splat(amount as i32);
             let mask = indices.simd_lt(amounts).cast::<<T as SimdElement>::Mask>();
             for i in 0..M {
+                debug_assert!(i < M);
                 unsafe { arrays[i].masked_store_simd(index, *vecs.get_unchecked(i), mask); }
             }
             amount -= T::LANES as isize;
             index += T::LANES;
+        }
+    }
+}
+
+impl<T: SimdInfo + std::default::Default, const N: usize> SimdArray<T, N>
+where
+    ArchSimd<T>:,
+{
+    // No easily built-in std::simd solution, let compiler auto-vectorize.
+    // #[inline(never)]
+    pub fn load_gather<const M: usize>(&mut self, load_index: usize, source_array: &[T; M], indicies: ArchSimd<u32>) {
+        let indicies_array = indicies.to_array();
+        for i in 0..T::LANES {
+            unsafe {
+                *self.get_unchecked_mut(load_index + i) = *source_array.get_unchecked(indicies_array[i] as usize);
+            }
         }
     }
 }

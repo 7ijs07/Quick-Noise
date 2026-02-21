@@ -68,6 +68,8 @@ impl Perlin {
                 PerlinVec::multiset_many::<4>(&mut arrays, &values, cur_index as usize, set_amount as isize);
             }
 
+            if y_next_index == 32 { break; }
+
             cur_index = y_next_index;
             y_it_scale += y_scale;
         }
