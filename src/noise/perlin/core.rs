@@ -1,0 +1,85 @@
+use crate::noise::perlin::constants::*;
+use crate::noise::perlin::containers::*;
+use crate::math::vec::{Vec2, Vec3};
+use crate::math::random::Random;
+
+pub struct Perlin {
+    pub(super) random_gen: Random
+}
+
+impl Perlin {
+    pub fn new(seed: i64) -> Self {
+        Self {
+            random_gen: Random::new(seed as u64),
+        }
+    }
+    
+    pub fn noise_2d(
+        &mut self,
+        pos: Vec2<i32>,
+        octaves: u32,
+        scale: f32,
+        amplitude: f32,
+        lacunarity: f32,
+        persistence: f32,
+        channel: i32,
+        octave_offset: f32,
+    ) -> PerlinMap {
+        let mut result: PerlinMap = PerlinMap::new_uninit();
+
+        // Get the channel seed for gradient generation.
+        let channel_seed: u64 = Random::static_mix_u64(channel as u64);
+
+        // Identify weight sum for normalization to [-ampltiude, amplitude]
+        let mut weight_sum = amplitude;
+        let mut cur_weight = amplitude;
+        for _ in 1..octaves {
+            cur_weight *= persistence;
+            weight_sum += cur_weight;
+        }
+        let weight_coef = 1.0 / weight_sum;
+
+        let mut cur_octave = Octave2D::splat(scale, 1.0);
+        
+        // Add each noise pass to result. Slight performance boost for initializing on the first pass.
+        self.single_octave_2d::<true>(&mut result, pos, &cur_octave, weight_coef, channel_seed, octave_offset);
+        for _ in 1..octaves {
+            cur_octave.scale /= lacunarity;
+            cur_octave.weight *= persistence;
+
+            self.single_octave_2d::<false>(&mut result, pos, &cur_octave, weight_coef, channel_seed, octave_offset);
+        }
+
+        result
+    }
+
+    pub fn noise_2d_octaves(
+        &mut self,
+        pos: Vec2<i32>,
+        octaves: impl IntoIterator<Item = impl Into<Octave2D>>,
+        amplitude: f32,
+        channel: i32,
+        octave_offset: f32,
+    ) -> PerlinMap {
+        let mut result: PerlinMap = PerlinMap::new_uninit();
+
+        // Get the channel seed for gradient generation.
+        let octaves_vec: Vec<Octave2D> = octaves.into_iter().map(Into::into).collect();
+        let channel_seed: u64 = Random::static_mix_u64(channel as u64);
+
+        // Identify weight sum for normalization to [-ampltiude, amplitude]
+        let mut weight_sum = 0.0;
+        for octave in &octaves_vec {
+            weight_sum += octave.weight;
+        }
+        let weight_coef = amplitude / weight_sum;
+
+        // Add each noise pass to result. Slight performance boost for initialize on the first pass.
+        self.single_octave_2d::<true>(&mut result, pos, &octaves_vec[0], weight_coef, channel_seed, octave_offset);
+        for i in 1..octaves_vec.len() {
+            self.single_octave_2d::<false>(&mut result, pos, &octaves_vec[i], weight_coef, channel_seed, octave_offset);
+        }
+
+        result
+    }
+}

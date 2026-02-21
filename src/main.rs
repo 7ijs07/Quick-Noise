@@ -11,35 +11,44 @@ mod math {
     pub mod vec;
 }
 
-mod noise {
-    pub mod perlin;
+mod testing {
+    pub mod profiler;
 }
 
-use crate::noise::perlin::{Octave2D, Perlin};
+mod emit {
+    pub mod grayscale;
+}
 
+mod noise;
+
+use crate::noise::perlin::Perlin;
+use crate::testing::profiler;
+use crate::emit::grayscale;
+
+// DISCLAIMER: Rust nightly is *needed* to run the code.
 fn main() {
     // For profiling performance:
-    // Perlin::profile_noise_2d();
-
-    // Seed gives deterministic results.
-    let mut perlin = Perlin::new(0);
+    //   NOTE: Ensure to run with "RUSTFLAGS='-C target-cpu=native' cargo run --release".
+    //   If the program appears to be stuck, this is likely why. Comment out the bench to run on debug.
+    // profiler::bench_perlin_2d();
 
     // Create noise from number of octaves, initial scale, lacunarity, and persistence.
-    //   - Initial scale is how far apart gradients are, higher scale means larger noise/slower to change per pixel.
-    //   - Lacunarity determines the scale of the next octave based on the previous one by dividing it. A lacunarity
-    //        of two means the next octave halves in scale.
-    //   - Persistence determines the weight of the next octave based on the previous one. A persistence of 0.5 means 
-    //        each successive octave is half as noticeable as the previous one.
+    // - Initial scale is how far apart gradients are, higher scale means larger noise/slower to change per pixel.
+    // - Lacunarity determines the scale of the next octave based on the previous one by dividing it. A lacunarity
+    //     of two means the next octave halves in scale.
+    // - Persistence determines the weight of the next octave based on the previous one. A persistence of 0.5 means 
+    //     each successive octave is half as noticeable as the previous one.
+    // - Channel allows for differing results for the same seed and octave scale. Acts as a second seed.
 
     // NOTE: Error will be thrown if folder 'noise_images' doesn't exist.
-    perlin.write_height_map("noise_images/single_pass.png", 32, 1, 64.0, 2.0, 0.5);
-    perlin.write_height_map("noise_images/glossy.png", 32, 11, 256.0, 1.5, 0.7);
-    perlin.write_height_map("noise_images/chiseled.png", 32, 6, 256.0, 2.0, 0.8);
-    perlin.write_height_map("noise_images/smooth.png", 32, 20, 512.0, 1.2, 0.9);
-    perlin.write_height_map("noise_images/sharp.png", 32, 6, 64.0, 2.0, 0.9);
+    grayscale::write_perlin_height_map("noise_images/single_pass.png", 32, 1, 64.0, 2.0, 0.5);
+    grayscale::write_perlin_height_map("noise_images/glossy.png", 32, 11, 256.0, 1.5, 0.7);
+    grayscale::write_perlin_height_map("noise_images/chiseled.png", 32, 6, 256.0, 2.0, 0.8);
+    grayscale::write_perlin_height_map("noise_images/smooth.png", 32, 20, 512.0, 1.2, 0.9);
+    grayscale::write_perlin_height_map("noise_images/sharp.png", 32, 6, 64.0, 2.0, 0.9);
 
     // For more control, determine the scale and weight of each octave:
-    perlin.write_height_map_octaves("noise_images/custom.png", 32, [
+    grayscale::write_perlin_octaves_height_map("noise_images/custom.png", 32, [
         (300.0, 8.0),
         (250.0, 7.0),
         (200.0, 4.0),
@@ -50,7 +59,7 @@ fn main() {
     ], 1);
 
     // Each axis can be scaled independently of eachother as well, like so:
-    perlin.write_height_map_octaves("noise_images/denim.png", 32, [
+    grayscale::write_perlin_octaves_height_map("noise_images/denim.png", 32, [
         ((64.0, 512.0), 8.0),
         ((512.0, 64.0), 8.0),
         ((32.0, 256.0), 4.0),
@@ -60,5 +69,4 @@ fn main() {
         ((8.0, 64.0), 1.0),
         ((64.0, 8.0), 1.0),
     ], 1);
-    
 }

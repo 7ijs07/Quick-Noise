@@ -171,36 +171,70 @@ impl Vec3<u32> {
 
 // === Comparison-based Operators ===
 
-impl<T: PartialOrd> Vec2<T> {
-    pub fn max(a: Vec2<T>, b: Vec2<T>) -> Vec2<T> {
+impl<T: Ord> Vec2<T> {
+    pub fn max(self, other: Vec2<T>) -> Vec2<T> {
         Vec2 {
-            x: if a.x >= b.x { a.x } else { b.x },
-            y: if a.y >= b.y { a.y } else { b.y },
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
         }
     }
 
-    pub fn min(a: Vec2<T>, b: Vec2<T>) -> Vec2<T> {
+    pub fn min(self, other: Vec2<T>) -> Vec2<T> {
         Vec2 {
-            x: if a.x <= b.x { a.x } else { b.x },
-            y: if a.y <= b.y { a.y } else { b.y },
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
         }
     }
 }
 
-impl<T: PartialOrd> Vec3<T> {
-    pub fn max(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
-        Vec3 {
-            x: if a.x >= b.x { a.x } else { b.x },
-            y: if a.y >= b.y { a.y } else { b.y },
-            z: if a.z >= b.z { a.z } else { b.z },
+impl<T: Float> Vec2<T> {
+    pub fn float_max(self, other: Vec2<T>) -> Vec2<T> {
+        Vec2 {
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
         }
     }
 
-    pub fn min(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
+    pub fn float_min(self, other: Vec2<T>) -> Vec2<T> {
+        Vec2 {
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
+        }
+    }
+}
+
+impl<T: Ord> Vec3<T> {
+    pub fn max(self, other: Vec3<T>) -> Vec3<T> {
         Vec3 {
-            x: if a.x <= b.x { a.x } else { b.x },
-            y: if a.y <= b.y { a.y } else { b.y },
-            z: if a.z <= b.z { a.z } else { b.z },
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
+            z: self.z.max(other.z),
+        }
+    }
+
+    pub fn min(self, other: Vec3<T>) -> Vec3<T> {
+        Vec3 {
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
+            z: self.z.min(other.z),
+        }
+    }
+}
+
+impl<T: Float> Vec3<T> {
+    pub fn float_max(self, other: Vec3<T>) -> Vec3<T> {
+        Vec3 {
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
+            z: self.z.max(other.z),
+        }
+    }
+
+    pub fn float_min(self, other: Vec3<T>) -> Vec3<T> {
+        Vec3 {
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
+            z: self.z.min(other.z),
         }
     }
 }
@@ -208,21 +242,6 @@ impl<T: PartialOrd> Vec3<T> {
 // === Floating point operations ===
 
 impl<T: Float> Vec2<T> {
-
-    pub fn max_float(a: Vec2<T>, b: Vec2<T>) -> Vec2<T> {
-        Vec2 {
-            x: a.x.max(b.x),
-            y: a.y.max(b.y),
-        }
-    }
-
-    pub fn min_float(a: Vec2<T>, b: Vec2<T>) -> Vec2<T> {
-        Vec2 {
-            x: a.x.min(b.x),
-            y: a.y.min(b.y),
-        }
-    }
-
     pub fn floor(&mut self) -> &Self {
         self.x = self.x.floor();
         self.y = self.y.floor();
@@ -249,22 +268,6 @@ impl<T: Float> Vec2<T> {
 }
 
 impl<T: Float> Vec3<T> {
-    pub fn max_float(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
-        Vec3 {
-            x: a.x.max(b.x),
-            y: a.y.max(b.y),
-            z: a.z.max(b.z),
-        }
-    }
-
-    pub fn min_float(a: Vec3<T>, b: Vec3<T>) -> Vec3<T> {
-        Vec3 {
-            x: a.x.min(b.x),
-            y: a.y.min(b.y),
-            z: a.z.min(b.z),
-        }
-    }
-
     pub fn floor(&mut self) -> &Self {
         self.x = self.x.floor();
         self.y = self.y.floor();
@@ -310,49 +313,62 @@ impl<T: Add<Output = T>> Vec3<T> {
 
 // === Basic Operations ===
 
-macro_rules! impl_vec_ops {
-    ($VecType:ident { $($field:ident),+ }, $OpTrait:ident, $op_method:ident, $op:tt) => {
+macro_rules! impl_vec_ops {(
+        $VecType:ident { $($field:ident),+ },
+        $OpTrait:ident,
+        $op_method:ident,
+        $op:tt
+    ) => {
         impl<T: $OpTrait<Output = T>> $OpTrait for $VecType<T> {
             type Output = $VecType<T>;
             fn $op_method(self, other: $VecType<T>) -> Self::Output {
                 $VecType {
-                    $(
-                        $field: self.$field $op other.$field,
-                    )+
+                    $($field: self.$field $op other.$field,)+
                 }
             }
         }
     };
     
-    ($VecType:ident { $($field:ident),+ }, $OpTrait:ident, $op_method:ident, $op:tt, assign) => {
+    (
+        $VecType:ident { $($field:ident),+ },
+        $OpTrait:ident,
+        $op_method:ident,
+        $op:tt,
+        assign
+    ) => {
         impl<T: $OpTrait> $OpTrait for $VecType<T> {
             fn $op_method(&mut self, other: $VecType<T>) {
-                $(
-                    self.$field $op other.$field;
-                )+
+                $(self.$field $op other.$field;)+
             }
         }
     };
     
-    ($VecType:ident { $($field:ident),+ }, $OpTrait:ident, $op_method:ident, $op:tt, scalar) => {
+    (
+        $VecType:ident { $($field:ident),+ },
+        $OpTrait:ident, $op_method:ident,
+        $op:tt,
+        scalar
+    ) => {
         impl<T: $OpTrait<Output = T> + Copy> $OpTrait<T> for $VecType<T> {
             type Output = $VecType<T>;
             fn $op_method(self, scalar: T) -> Self::Output {
                 $VecType {
-                    $(
-                        $field: self.$field $op scalar,
-                    )+
+                    $($field: self.$field $op scalar,)+
                 }
             }
         }
     };
     
-    ($VecType:ident { $($field:ident),+ }, $OpTrait:ident, $op_method:ident, $op:tt, scalar_assign) => {
+    (
+        $VecType:ident { $($field:ident),+ },
+        $OpTrait:ident,
+        $op_method:ident,
+        $op:tt,
+        scalar_assign
+    ) => {
         impl<T: $OpTrait + Copy> $OpTrait<T> for $VecType<T> {
             fn $op_method(&mut self, scalar: T) {
-                $(
-                    self.$field $op scalar;
-                )+
+                $(self.$field $op scalar;)+
             }
         }
     };
@@ -389,16 +405,19 @@ macro_rules! impl_all_vec_ops {
 impl_all_vec_ops!(Vec2 { x, y });
 impl_all_vec_ops!(Vec3 { x, y, z });
 
-macro_rules! impl_scalar_ops {
-    ($ScalarType:ty, $VecType:ident { $($field:ident),+ }, $OpTrait:ident, $op_method:ident, $op:tt) => {
+macro_rules! impl_scalar_ops {(
+        $ScalarType:ty,
+        $VecType:ident { $($field:ident),+ },
+        $OpTrait:ident,
+        $op_method:ident,
+        $op:tt
+    ) => {
         impl $OpTrait<$VecType<$ScalarType>> for $ScalarType {
             type Output = $VecType<$ScalarType>;
             
             fn $op_method(self, vec: $VecType<$ScalarType>) -> Self::Output {
                 $VecType {
-                    $(
-                        $field: self $op vec.$field,
-                    )+
+                    $($field: self $op vec.$field,)+
                 }
             }
         }

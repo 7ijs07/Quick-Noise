@@ -360,6 +360,7 @@ where
     ArchSimd<T>: SimdFloat + StdFloat,
     ArchSimd<T>: Neg<Output = ArchSimd<T>>,
 {
+    // No actual mul_sub in std::simd, but the compiler will make it for us.
     pub fn mul_sub(self, mult: Self, offset: Self) -> Self {
         self.mul_add(mult, -offset)
     }
