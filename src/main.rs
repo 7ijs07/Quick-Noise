@@ -1,5 +1,7 @@
 #![feature(portable_simd)]
 #![feature(generic_const_exprs)]
+#![feature(const_cmp)]
+#![feature(const_trait_impl)]
 
 mod simd {
     pub mod arch_simd;
