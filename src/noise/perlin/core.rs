@@ -1,10 +1,10 @@
+use crate::math::random::Random;
+use crate::math::vec::{Vec2, Vec3};
 use crate::noise::perlin::constants::*;
 use crate::noise::perlin::containers::*;
-use crate::math::vec::{Vec2, Vec3};
-use crate::math::random::Random;
 
 pub struct Perlin {
-    pub(super) random_gen: Random
+    pub(super) random_gen: Random,
 }
 
 impl Perlin {
@@ -13,7 +13,7 @@ impl Perlin {
             random_gen: Random::new(seed as u64),
         }
     }
-    
+
     pub fn noise_2d(
         &mut self,
         pos: Vec2<i32>,
@@ -40,14 +40,28 @@ impl Perlin {
         let weight_coef = 1.0 / weight_sum;
 
         let mut cur_octave = Octave2D::splat(scale, 1.0);
-        
+
         // Add each noise pass to result. Slight performance boost for initializing on the first pass.
-        self.single_octave_2d::<true>(&mut result, pos, &cur_octave, weight_coef, channel_seed, octave_offset);
+        self.single_octave_2d::<true>(
+            &mut result,
+            pos,
+            &cur_octave,
+            weight_coef,
+            channel_seed,
+            octave_offset,
+        );
         for _ in 1..octaves {
             cur_octave.scale /= lacunarity;
             cur_octave.weight *= persistence;
 
-            self.single_octave_2d::<false>(&mut result, pos, &cur_octave, weight_coef, channel_seed, octave_offset);
+            self.single_octave_2d::<false>(
+                &mut result,
+                pos,
+                &cur_octave,
+                weight_coef,
+                channel_seed,
+                octave_offset,
+            );
         }
 
         result
@@ -75,9 +89,23 @@ impl Perlin {
         let weight_coef = amplitude / weight_sum;
 
         // Add each noise pass to result. Slight performance boost for initialize on the first pass.
-        self.single_octave_2d::<true>(&mut result, pos, &octaves_vec[0], weight_coef, channel_seed, octave_offset);
+        self.single_octave_2d::<true>(
+            &mut result,
+            pos,
+            &octaves_vec[0],
+            weight_coef,
+            channel_seed,
+            octave_offset,
+        );
         for i in 1..octaves_vec.len() {
-            self.single_octave_2d::<false>(&mut result, pos, &octaves_vec[i], weight_coef, channel_seed, octave_offset);
+            self.single_octave_2d::<false>(
+                &mut result,
+                pos,
+                &octaves_vec[i],
+                weight_coef,
+                channel_seed,
+                octave_offset,
+            );
         }
 
         result

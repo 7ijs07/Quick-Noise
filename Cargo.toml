@@ -6,7 +6,17 @@ edition = "2024"
 [profile.release]
 opt-level = 3
 
+[profile.bench]
+opt-level = 3
+
 [dependencies]
 num-traits = "0.2.19"
 image = { version = "0.25.9", default-features = false, features = ["png"] }
 cfg-if = "1.0.4"
+
+[dev-dependencies]
+criterion = { version = "0.8.2" }
+
+[[bench]]
+name = "perlin_2d"
+harness = false
