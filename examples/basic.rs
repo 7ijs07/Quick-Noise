@@ -4,7 +4,7 @@ use quick_noise::perlin::Perlin;
 // DISCLAIMER: Rust nightly is *needed* to run the code.
 fn main() {
     // For profiling performance:
-    //   NOTE: Ensure to run with "RUSTFLAGS='-C target-cpu=native' cargo run --release".
+    //   NOTE: Ensure to run with "RUSTFLAGS='-C target-cpu=native' cargo run --release --example basic".
     //   If the program appears to be stuck, this is likely why. Comment out the bench to run on debug.
     // profiler::bench_perlin_2d();
 
