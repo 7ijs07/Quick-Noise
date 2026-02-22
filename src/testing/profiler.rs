@@ -5,17 +5,15 @@ use std::hint::black_box;
 pub fn profile_perlin_2d_call(octaves: u32, scale: f32, lacunarity: f32, persistence: f32) {
     const NUM_LOOPS: usize = 10000000;
     const SAMPLE_SIZE: usize = 1024;
-    let mut code: f32 = 0.0;
 
     let mut perlin = Perlin::new(0);
 
     let start = Instant::now();
     for i in 0..NUM_LOOPS {
-        code += perlin.noise_2d((i as i32, i as i32).into(), octaves, scale, 1.0, lacunarity, persistence, 1, 0.0)[i & 0xFF];
+        black_box(perlin.noise_2d((i as i32, i as i32).into(), octaves, scale, 1.0, lacunarity, persistence, 1, 0.0)[i & 0xFF]);
     }
     let elapsed = start.elapsed();
     let ms_elapsed = elapsed.as_millis();
-    black_box(code);
 
     let total = NUM_LOOPS * SAMPLE_SIZE;
     let elapsed_per_loop = elapsed.as_nanos() as u64 / NUM_LOOPS as u64;
@@ -51,14 +49,12 @@ fn profile_perlin_2d_call_internal(octaves: u32, scale: f32, num_loops: usize) {
     const SAMPLE_SIZE: usize = 1024;
     
     let mut perlin = Perlin::new(0);
-    let mut code: f32 = 0.0;
 
     let start = Instant::now();
     for i in 0..num_loops {
-        code += perlin.noise_2d((i as i32, i as i32).into(), octaves, scale, 1.0, 2.0, 0.5, 1, 0.0)[i & 0xFF];
+        black_box(perlin.noise_2d((i as i32, i as i32).into(), octaves, scale, 1.0, 2.0, 0.5, 1, 0.0)[i & 0xFF]);
     }
     let elapsed = start.elapsed();
-    black_box(code);
 
     let elapsed_per_loop = elapsed.as_nanos() as u64 / num_loops as u64;
     println!("Scale {scale} -> {elapsed_per_loop} ns per {SAMPLE_SIZE} samples!");
