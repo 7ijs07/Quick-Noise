@@ -42,5 +42,5 @@ fn perlin_3d_benchmark(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, perlin_2d_benchmark, perlin_2d_benchmark);
+criterion_group!(benches, perlin_2d_benchmark, perlin_3d_benchmark);
 criterion_main!(benches);
