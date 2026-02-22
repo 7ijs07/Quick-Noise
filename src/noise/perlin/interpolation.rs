@@ -104,12 +104,9 @@ impl Perlin {
                     x_it += 1;
                 } else {
                     let x_lerp_1 = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it) });
-                    let x_lerp_2 =
-                        ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 1) });
-                    let x_lerp_3 =
-                        ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 2) });
-                    let x_lerp_4 =
-                        ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 3) });
+                    let x_lerp_2 = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 1) });
+                    let x_lerp_3 = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 2) });
+                    let x_lerp_4 = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 3) });
 
                     for block in 0..NUM_BLOCKS {
                         let index: usize = x_it * ROW_SIZE + y_it + block * f32::LANES;
@@ -272,14 +269,10 @@ impl Perlin {
             let y_tb_offset_vec = z_lerp.mul_add(y_trb - y_tlb, y_tlb) * y_weighted_increment_vec;
             let y_bb_offset_vec = z_lerp.mul_add(y_brb - y_blb, y_blb) * y_weighted_increment_vec;
 
-            let tf_base_vec =
-                z_lerp.mul_add(sum_prod_trf - sum_prod_tlf, sum_prod_tlf) * weight_vec;
-            let bf_base_vec =
-                z_lerp.mul_add(sum_prod_brf - sum_prod_blf, sum_prod_blf) * weight_vec;
-            let tb_base_vec =
-                z_lerp.mul_add(sum_prod_trb - sum_prod_tlb, sum_prod_tlb) * weight_vec;
-            let bb_base_vec =
-                z_lerp.mul_add(sum_prod_brb - sum_prod_blb, sum_prod_blb) * weight_vec;
+            let tf_base_vec = z_lerp.mul_add(sum_prod_trf - sum_prod_tlf, sum_prod_tlf) * weight_vec;
+            let bf_base_vec = z_lerp.mul_add(sum_prod_brf - sum_prod_blf, sum_prod_blf) * weight_vec;
+            let tb_base_vec = z_lerp.mul_add(sum_prod_trb - sum_prod_tlb, sum_prod_tlb) * weight_vec;
+            let bb_base_vec = z_lerp.mul_add(sum_prod_brb - sum_prod_blb, sum_prod_blb) * weight_vec;
 
             x_tf_offset.store_simd(z_it, x_tf_offset_vec);
             x_bf_offset.store_simd(z_it, x_bf_offset_vec);
@@ -317,17 +310,13 @@ impl Perlin {
                 for block in 0..NUM_BLOCKS {
                     let x_tf_offset_vec = x_tf_offset.load_simd(z_it + f32::LANES * block);
                     let x_bf_offset_vec = x_bf_offset.load_simd(z_it + f32::LANES * block);
-                    let x_top_offset_dif_vec =
-                        x_top_offset_dif.load_simd(z_it + f32::LANES * block);
-                    let x_bottom_offset_dif_vec =
-                        x_bottom_offset_dif.load_simd(z_it + f32::LANES * block);
+                    let x_top_offset_dif_vec = x_top_offset_dif.load_simd(z_it + f32::LANES * block);
+                    let x_bottom_offset_dif_vec = x_bottom_offset_dif.load_simd(z_it + f32::LANES * block);
 
                     let y_tf_offset_vec = y_tf_offset.load_simd(z_it + f32::LANES * block);
                     let y_bf_offset_vec = y_bf_offset.load_simd(z_it + f32::LANES * block);
-                    let y_top_offset_dif_vec =
-                        y_top_offset_dif.load_simd(z_it + f32::LANES * block);
-                    let y_bottom_offset_dif_vec =
-                        y_bottom_offset_dif.load_simd(z_it + f32::LANES * block);
+                    let y_top_offset_dif_vec = y_top_offset_dif.load_simd(z_it + f32::LANES * block);
+                    let y_bottom_offset_dif_vec = y_bottom_offset_dif.load_simd(z_it + f32::LANES * block);
 
                     let tf_base_vec = tf_base.load_simd(z_it + f32::LANES * block);
                     let bf_base_vec = bf_base.load_simd(z_it + f32::LANES * block);
@@ -367,20 +356,15 @@ impl Perlin {
                 let mut y_it = y_start_index;
                 while y_it < y_end_index {
                     if y_it + 4 <= y_end_index {
-                        let y_lerp_1 =
-                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it) });
-                        let y_lerp_2 =
-                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 1) });
-                        let y_lerp_3 =
-                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 2) });
-                        let y_lerp_4 =
-                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 3) });
+                        let y_lerp_1 = ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it) });
+                        let y_lerp_2 = ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 1) });
+                        let y_lerp_3 = ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 2) });
+                        let y_lerp_4 = ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 3) });
 
+                        let base_index: usize = x_it * MAP_SIZE + y_it * ROW_SIZE + z_it;
                         for block in 0..NUM_BLOCKS {
-                            let index: usize =
-                                x_it * MAP_SIZE + y_it * ROW_SIZE + z_it + block * f32::LANES;
-                            let output =
-                                y_lerp_1.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let index: usize = base_index + block * f32::LANES;
+                            let output = y_lerp_1.mul_add(base_lerps_dif[block], base_lerps_top[block]);
                             let val = if INITIALIZE {
                                 output
                             } else {
@@ -391,13 +375,8 @@ impl Perlin {
                             base_lerps_top[block] += y_offset_lerps_top[block];
                         }
                         for block in 0..NUM_BLOCKS {
-                            let index: usize = x_it * MAP_SIZE
-                                + y_it * ROW_SIZE
-                                + z_it
-                                + block * f32::LANES
-                                + ROW_SIZE;
-                            let output =
-                                y_lerp_2.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let index: usize = base_index + block * f32::LANES + ROW_SIZE;
+                            let output = y_lerp_2.mul_add(base_lerps_dif[block], base_lerps_top[block]);
                             let val = if INITIALIZE {
                                 output
                             } else {
@@ -408,13 +387,8 @@ impl Perlin {
                             base_lerps_top[block] += y_offset_lerps_top[block];
                         }
                         for block in 0..NUM_BLOCKS {
-                            let index: usize = x_it * MAP_SIZE
-                                + y_it * ROW_SIZE
-                                + z_it
-                                + block * f32::LANES
-                                + ROW_SIZE * 2;
-                            let output =
-                                y_lerp_3.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let index: usize = base_index + block * f32::LANES + ROW_SIZE * 2;
+                            let output = y_lerp_3.mul_add(base_lerps_dif[block], base_lerps_top[block]);
                             let val = if INITIALIZE {
                                 output
                             } else {
@@ -425,13 +399,8 @@ impl Perlin {
                             base_lerps_top[block] += y_offset_lerps_top[block];
                         }
                         for block in 0..NUM_BLOCKS {
-                            let index: usize = x_it * MAP_SIZE
-                                + y_it * ROW_SIZE
-                                + z_it
-                                + block * f32::LANES
-                                + ROW_SIZE * 3;
-                            let output =
-                                y_lerp_4.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let index: usize = base_index + block * f32::LANES + ROW_SIZE * 3;
+                            let output = y_lerp_4.mul_add(base_lerps_dif[block], base_lerps_top[block]);
                             let val = if INITIALIZE {
                                 output
                             } else {
@@ -443,14 +412,11 @@ impl Perlin {
                         }
                         y_it += 4;
                     } else {
-                        let y_lerp =
-                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it) });
+                        let y_lerp = ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it) });
 
                         for block in 0..NUM_BLOCKS {
-                            let index: usize =
-                                x_it * MAP_SIZE + y_it * ROW_SIZE + z_it + block * f32::LANES;
-                            let output =
-                                y_lerp.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let index: usize = x_it * MAP_SIZE + y_it * ROW_SIZE + z_it + block * f32::LANES;
+                            let output = y_lerp.mul_add(base_lerps_dif[block], base_lerps_top[block]);
                             let val = if INITIALIZE {
                                 output
                             } else {
