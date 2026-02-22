@@ -5,7 +5,7 @@ use crate::math::vec::{Vec2, Vec3};
 
 impl Perlin {
     // #[inline(never)]
-    pub(super) fn single_octave_2d<const INITIALIZE: bool>(
+    pub(super) fn uniform_grid_octave_2d<const INITIALIZE: bool>(
         &mut self,
         result: &mut PerlinMap,
         pos: Vec2<i32>,
@@ -50,7 +50,7 @@ impl Perlin {
 
         // Set the top gradients.
         let (tl, tr) = d_vecs.tl_tr_mut();
-        self.set_gradients_2d(tl, tr, grid_start.x, grid_start.y, next_index_offset.y, octave.scale.y, num_loops.y, &distances.y);
+        self.set_uniform_grid_gradients_2d(tl, tr, grid_start.x, grid_start.y, next_index_offset.y, octave.scale.y, num_loops.y, &distances.y);
 
         // Iterate through single x chunks but full y chunks.
         let mut x_cur_index: u32 = 0;
@@ -65,10 +65,10 @@ impl Perlin {
 
             // Set bottom gradients.
             let (bl, br) = d_vecs.bl_br_mut();
-            self.set_gradients_2d(bl, br, grid_start.x + x_it as i32 + 1, grid_start.y, next_index_offset.y, octave.scale.y, num_loops.y, &distances.y);
+            self.set_uniform_grid_gradients_2d(bl, br, grid_start.x + x_it as i32 + 1, grid_start.y, next_index_offset.y, octave.scale.y, num_loops.y, &distances.y);
         
             // Perform dot products on x and trilinear interpolation (with quintic fade).
-            Self::compute_noise_from_vecs_2d::<INITIALIZE>(
+            Self::uniform_grid_interpolate_2d::<INITIALIZE>(
                 &d_vecs, x_cur_frac_start, increment.x,
                 &interpolations, x_cur_index as usize, x_next_index as usize, weight, result
             );
@@ -85,7 +85,7 @@ impl Perlin {
     }
 
 
-    pub(super) fn single_octave_3d<const INITIALIZE: bool>(
+    pub(super) fn uniform_grid_octave_3d<const INITIALIZE: bool>(
         &mut self,
         result: &mut PerlinVol,
         pos: Vec3<i32>,
@@ -137,7 +137,7 @@ impl Perlin {
 
             // Set the top gradients.
             let (tlf, trf, tlb, trb) = d_vecs.tlf_trf_tlb_trb_mut();
-            self.set_gradients_3d(
+            self.set_uniform_grid_gradients_3d(
                 tlf, trf, tlb, trb, grid_start.x + x_it as i32, 
                 grid_start.y, grid_start.z, 
                 next_index_offset.z, octave.scale.z, 
@@ -156,7 +156,7 @@ impl Perlin {
 
                 // Set the bottom gradients.
                 let (blf, brf, blb, brb) = d_vecs.blf_brf_blb_brb_mut();
-                self.set_gradients_3d(
+                self.set_uniform_grid_gradients_3d(
                     blf, brf, blb, brb, grid_start.x + x_it as i32, 
                     grid_start.y + y_it as i32 + 1, grid_start.z, 
                     next_index_offset.z, octave.scale.z, 
@@ -169,7 +169,7 @@ impl Perlin {
                 let y_cur_frac_start = unsafe { distances.y.get_unchecked(y_cur_index as usize) };
 
                 // Perform dot products on x,y and trilinear interpolation (with quintic fade).
-                Self::compute_noise_from_vecs_3d::<INITIALIZE>(
+                Self::uniform_grid_interpolate_3d::<INITIALIZE>(
                     &d_vecs, x_cur_frac_start, y_cur_frac_start, increment.x, increment.y,
                     &interpolations, x_cur_index as usize, y_cur_index as usize,
                     x_next_index as usize, y_next_index as usize, weight, result

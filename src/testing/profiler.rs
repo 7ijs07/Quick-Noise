@@ -11,7 +11,7 @@ pub fn profile_perlin_2d_call(octaves: u32, scale: f32, lacunarity: f32, persist
     let mut array = PerlinMap::new_uninit();
     let start = Instant::now();
     for i in 0..NUM_LOOPS {
-        perlin.noise_2d(&mut array, (i as i32, i as i32).into(), octaves, scale, 1.0, lacunarity, persistence, 1, 0.0);
+        perlin.uniform_grid_2d(&mut array, (i as i32, i as i32).into(), octaves, scale, 1.0, lacunarity, persistence, 1, 0.0);
         black_box(&array);
     }
     let elapsed = start.elapsed();
@@ -38,7 +38,7 @@ pub fn profile_perlin_3d_call(octaves: u32, scale: f32, lacunarity: f32, persist
     let mut array = PerlinVol::new_uninit();
     let start = Instant::now();
     for i in 0..NUM_LOOPS {
-        perlin.noise_3d(&mut array, (i as i32, i as i32, i as i32).into(), octaves, scale, 1.0, lacunarity, persistence, 1, 0.0);
+        perlin.uniform_grid_3d(&mut array, (i as i32, i as i32, i as i32).into(), octaves, scale, 1.0, lacunarity, persistence, 1, 0.0);
         black_box(&array);
     }
     let elapsed = start.elapsed();
@@ -100,7 +100,7 @@ fn profile_perlin_2d_call_internal(octaves: u32, scale: f32, num_loops: usize) {
     let mut array = PerlinMap::new_uninit();
     let start = Instant::now();
     for i in 0..num_loops {
-        perlin.noise_2d(&mut array, (i as i32, i as i32).into(), octaves, scale, 1.0, 2.0, 0.5, 1, 0.0);
+        perlin.uniform_grid_2d(&mut array, (i as i32, i as i32).into(), octaves, scale, 1.0, 2.0, 0.5, 1, 0.0);
         black_box(&array);
     }
     let elapsed = start.elapsed();
@@ -117,7 +117,7 @@ fn profile_perlin_3d_call_internal(octaves: u32, scale: f32, num_loops: usize) {
     let mut array = PerlinVol::new_uninit();
     let start = Instant::now();
     for i in 0..num_loops {
-        perlin.noise_3d(&mut array, (i as i32, i as i32, i as i32).into(), octaves, scale, 1.0, 2.0, 0.5, 1, 0.0);
+        perlin.uniform_grid_3d(&mut array, (i as i32, i as i32, i as i32).into(), octaves, scale, 1.0, 2.0, 0.5, 1, 0.0);
         black_box(&array);
     }
     let elapsed = start.elapsed();

@@ -5,7 +5,7 @@ use crate::simd::simd_array::SimdArray;
 
 impl Perlin {
     // #[inline(never)]
-    pub(super) fn set_gradients_2d (
+    pub(super) fn set_uniform_grid_gradients_2d (
         &mut self,
         left: &mut PerlinVecPair,
         right: &mut PerlinVecPair,
@@ -77,7 +77,7 @@ impl Perlin {
     }
 
     #[inline(never)]
-    pub(super) fn set_gradients_3d (
+    pub(super) fn set_uniform_grid_gradients_3d (
         &mut self,
         lf: &mut PerlinVecTriple,
         rf: &mut PerlinVecTriple,

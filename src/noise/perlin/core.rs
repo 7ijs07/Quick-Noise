@@ -14,7 +14,7 @@ impl Perlin {
         }
     }
 
-    pub fn noise_2d(
+    pub fn uniform_grid_2d(
         &mut self,
         result: &mut PerlinMap,
         pos: Vec2<i32>,
@@ -41,7 +41,7 @@ impl Perlin {
         let mut cur_octave = Octave2D::splat(scale, 1.0);
 
         // Add each noise pass to result. Slight performance boost for initializing on the first pass.
-        self.single_octave_2d::<true>(
+        self.uniform_grid_octave_2d::<true>(
             result,
             pos,
             &cur_octave,
@@ -53,7 +53,7 @@ impl Perlin {
             cur_octave.scale /= lacunarity;
             cur_octave.weight *= persistence;
 
-            self.single_octave_2d::<false>(
+            self.uniform_grid_octave_2d::<false>(
                 result,
                 pos,
                 &cur_octave,
@@ -64,7 +64,7 @@ impl Perlin {
         }
     }
 
-    pub fn noise_2d_octaves(
+    pub fn uniform_grid_2d_octaves(
         &mut self,
         pos: Vec2<i32>,
         octaves: impl IntoIterator<Item = impl Into<Octave2D>>,
@@ -86,7 +86,7 @@ impl Perlin {
         let weight_coef = amplitude / weight_sum;
 
         // Add each noise pass to result. Slight performance boost for initialize on the first pass.
-        self.single_octave_2d::<true>(
+        self.uniform_grid_octave_2d::<true>(
             &mut result,
             pos,
             &octaves_vec[0],
@@ -95,7 +95,7 @@ impl Perlin {
             octave_offset,
         );
         for i in 1..octaves_vec.len() {
-            self.single_octave_2d::<false>(
+            self.uniform_grid_octave_2d::<false>(
                 &mut result,
                 pos,
                 &octaves_vec[i],
@@ -108,7 +108,7 @@ impl Perlin {
         result
     }
 
-    pub fn noise_3d(
+    pub fn uniform_grid_3d(
         &mut self,
         result: &mut PerlinVol,
         pos: Vec3<i32>,
@@ -135,7 +135,7 @@ impl Perlin {
         let mut cur_octave = Octave3D::splat(scale, 1.0);
 
         // Add each noise pass to result. Slight performance boost for initializing on the first pass.
-        self.single_octave_3d::<true>(
+        self.uniform_grid_octave_3d::<true>(
             result,
             pos,
             &cur_octave,
@@ -147,7 +147,7 @@ impl Perlin {
             cur_octave.scale /= lacunarity;
             cur_octave.weight *= persistence;
 
-            self.single_octave_3d::<false>(
+            self.uniform_grid_octave_3d::<false>(
                 result,
                 pos,
                 &cur_octave,

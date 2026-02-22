@@ -6,7 +6,7 @@ use std::simd::StdFloat;
 
 impl Perlin {
     // #[inline(never)]
-    pub(super) fn compute_noise_from_vecs_2d<const INITIALIZE: bool>(
+    pub(super) fn uniform_grid_interpolate_2d<const INITIALIZE: bool>(
         gradients: &PerlinContainer2D,
         x_frac_start: f32,
         x_increment: f32,
@@ -168,7 +168,7 @@ impl Perlin {
     }
 
     // #[inline(never)]
-    pub(super) fn compute_noise_from_vecs_3d<const INITIALIZE: bool>(
+    pub(super) fn uniform_grid_interpolate_3d<const INITIALIZE: bool>(
         gradients: &PerlinContainer3D,
         x_frac_start: f32,
         y_frac_start: f32,
