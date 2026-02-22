@@ -1,6 +1,4 @@
 use std::simd::{Simd, SimdElement};
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
-use std::marker::PhantomData;
 
 // Static dispatch for identifying lane sizes and number of simd registers.
 

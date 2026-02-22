@@ -1,20 +1,12 @@
 use crate::math::vec::{Vec2, Vec3};
 use crate::simd::simd_array::SimdArray;
-use std::sync::LazyLock;
 
 pub const ROW_SIZE: usize = 32;
 pub const MAP_SIZE: usize = 1024;
 pub const VOL_SIZE: usize = 32768;
 
-pub const NUM_DIRECTIONS: usize = 16;
 pub const LO_EPSILON: f64 = 1e-4;
 pub const HI_EPSILON: f64 = 1.0 - 1e-4;
-
-// pub const GRADIENTS_3D_LOOKUP: [(f64, f64, f64); 12] = [
-//     (1.0, 1.0, 0.0), (-1.0, 1.0, 0.0), (1.0, -1.0, 0.0), (-1.0, -1.0, 0.0),
-//     (1.0, 0.0, 1.0), (-1.0, 0.0, 1.0), (1.0, 0.0, -1.0), (-1.0, 0.0, -1.0),
-//     (0.0, 1.0, 1.0), (0.0, -1.0, 1.0), (0.0, 1.0, -1.0), (0.0, -1.0, -1.0)
-// ];
 
 pub type PerlinVec = SimdArray<f32, ROW_SIZE>;
 pub type PerlinMap = SimdArray<f32, MAP_SIZE>;
@@ -22,20 +14,6 @@ pub type PerlinVol = SimdArray<f32, VOL_SIZE>;
 
 pub type PerlinVecPair = Vec2<PerlinVec>;
 pub type PerlinVecTriple = Vec3<PerlinVec>;
-
-// pub static GRADIENTS_2D: LazyLock<[Vec2<f64>; NUM_DIRECTIONS]> = LazyLock::new(|| {
-//     let mut gradients: [Vec2<f64>; NUM_DIRECTIONS] = [Vec2::<f64> {x: 0.0, y: 0.0}; NUM_DIRECTIONS];
-
-//     let scale: f64 = 2.0_f64.sqrt();
-//     for i in 0..NUM_DIRECTIONS {
-//         let angle: f64 = (2.0 * PI) * (i as f64 / NUM_DIRECTIONS as f64);
-//         let x: f64 = angle.cos() * scale;
-//         let y: f64 = angle.sin() * scale;
-//         gradients[i] = Vec2::<f64> {x, y};
-//     }
-
-//     gradients
-// });
 
 pub const GRADIENTS_2D: [Vec2<f32>; 16] = [
     Vec2::new(1.4142135623730951, 0.0000000000000000),
@@ -74,6 +52,26 @@ pub const GRADIENTS_3D: [Vec3<f32>; 16] = [
     Vec3::new(0.0, -1.0, 1.0),
     Vec3::new(0.0, -1.0, -1.0),
 ];
+
+// const GRADIENTS_3D_LOOKUP: [(f64, f64, f64); 12] = [
+//     (1.0, 1.0, 0.0), (-1.0, 1.0, 0.0), (1.0, -1.0, 0.0), (-1.0, -1.0, 0.0),
+//     (1.0, 0.0, 1.0), (-1.0, 0.0, 1.0), (1.0, 0.0, -1.0), (-1.0, 0.0, -1.0),
+//     (0.0, 1.0, 1.0), (0.0, -1.0, 1.0), (0.0, 1.0, -1.0), (0.0, -1.0, -1.0)
+// ];
+
+// pub static GRADIENTS_2D: LazyLock<[Vec2<f64>; NUM_DIRECTIONS]> = LazyLock::new(|| {
+//     let mut gradients: [Vec2<f64>; NUM_DIRECTIONS] = [Vec2::<f64> {x: 0.0, y: 0.0}; NUM_DIRECTIONS];
+
+//     let scale: f64 = 2.0_f64.sqrt();
+//     for i in 0..NUM_DIRECTIONS {
+//         let angle: f64 = (2.0 * PI) * (i as f64 / NUM_DIRECTIONS as f64);
+//         let x: f64 = angle.cos() * scale;
+//         let y: f64 = angle.sin() * scale;
+//         gradients[i] = Vec2::<f64> {x, y};
+//     }
+
+//     gradients
+// });
 
 // pub static GRADIENTS_3D: LazyLock<[Vec3<f64>; NUM_DIRECTIONS]> = LazyLock::new(|| {
 //     let mut gradients: [Vec3<f64>; NUM_DIRECTIONS] = [Vec3::<f64>::new(0.0, 0.0, 0.0); NUM_DIRECTIONS];

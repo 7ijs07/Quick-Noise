@@ -1,6 +1,5 @@
 use crate::noise::perlin::Perlin;
 use crate::noise::perlin::constants::*;
-use std::simd::num::SimdUint;
 use crate::simd::arch_simd::{ArchSimd, SimdInfo};
 use crate::simd::simd_array::SimdArray;
 
