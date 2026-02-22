@@ -18,5 +18,5 @@ cfg-if = "1.0.4"
 criterion = { version = "0.8.2" }
 
 [[bench]]
-name = "perlin_2d"
+name = "perlin"
 harness = false
