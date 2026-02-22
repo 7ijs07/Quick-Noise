@@ -1,13 +1,11 @@
 // Primitive but fast module for generating random-looking outputs.
 
-use std::ops::{Shr, BitXor, Mul};
-use std::simd::{Simd, SimdElement};
 use crate::simd::arch_simd::ArchSimd;
 use std::simd::num::SimdInt;
 
 pub struct Random {
     core_seed: u64,
-    channel_seed: u64
+    channel_seed: u64,
 }
 
 impl Random {
@@ -15,9 +13,9 @@ impl Random {
         let init_core_seed: u64 = Self::static_mix_u64(seed);
         let init_channel_seed: u64 = Self::static_mix_u64(init_core_seed);
 
-        Self { 
+        Self {
             core_seed: init_core_seed,
-            channel_seed: init_channel_seed
+            channel_seed: init_channel_seed,
         }
     }
 
@@ -41,7 +39,12 @@ impl Random {
         Self::mix_u32_pair_simd_impl(data1.cast() ^ seed_vec, data2.cast())
     }
 
-    pub fn mix_i32_simd_triple(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>, data3: ArchSimd<i32>) -> ArchSimd<u32> {
+    pub fn mix_i32_simd_triple(
+        &self,
+        data1: ArchSimd<i32>,
+        data2: ArchSimd<i32>,
+        data3: ArchSimd<i32>,
+    ) -> ArchSimd<u32> {
         let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
 
         Self::mix_u32_triple_simd_impl(data1.cast() ^ seed_vec, data2.cast(), data3.cast())
@@ -61,7 +64,7 @@ impl Random {
         let concat_data: u64 = Self::combine_i32_pair(data1, data2);
         self.mix_u64_pair(concat_data, (data3 as u64) << 32)
     }
-    
+
     // === Static Mixers ===
 
     pub fn static_mix_u64(data: u64) -> u64 {
@@ -73,7 +76,7 @@ impl Random {
     }
 
     // === Private Helpers ===
-    
+
     fn combine_i32_pair(data1: i32, data2: i32) -> u64 {
         (data1 as u64) | ((data2 as u64) << 32)
     }
@@ -88,7 +91,7 @@ impl Random {
         data ^= data >> 33;
         data
     }
-    
+
     fn mix_u64_pair_impl(mut data1: u64, data2: u64) -> u64 {
         data1 ^= data1 >> 33;
         data1 = data1.wrapping_mul(0xff51afd7ed558ccd ^ data2);
@@ -97,7 +100,7 @@ impl Random {
         data1 ^= data1 >> 33;
         data1
     }
-    
+
     fn mix_bits_32_impl(mut data: u32) -> u32 {
         data ^= data >> 16;
         data = data.wrapping_mul(0x85ebca6b);
@@ -116,7 +119,11 @@ impl Random {
         data1
     }
 
-    fn mix_u32_triple_simd_impl(mut data1: ArchSimd<u32>, data2: ArchSimd<u32>, data3: ArchSimd<u32>) -> ArchSimd<u32> {
+    fn mix_u32_triple_simd_impl(
+        mut data1: ArchSimd<u32>,
+        data2: ArchSimd<u32>,
+        data3: ArchSimd<u32>,
+    ) -> ArchSimd<u32> {
         data1 ^= data1 >> 16;
         data1 *= ArchSimd::splat(0x85ebca6b) ^ data2;
         data1 ^= data1 >> 13;
