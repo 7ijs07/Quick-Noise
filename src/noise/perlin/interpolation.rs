@@ -17,7 +17,7 @@ impl Perlin {
         result: &mut PerlinMap,
     ) {
         let weight_vec = ArchSimd::splat(weight);
-        let x_weighted_increment_vec = ArchSimd::splat(x_increment) * weight_vec;
+        let x_weighted_increment_vec = ArchSimd::splat(x_increment * weight);
         let x_upper_increment = ArchSimd::splat(x_frac_start);
         let x_lower_increment = ArchSimd::splat(x_frac_start - 1.0);
 
@@ -58,15 +58,9 @@ impl Perlin {
                 let base_lerp_bottom = y_lerp.mul_add(prod_sum_br - prod_sum_bl, prod_sum_bl) * weight_vec;
                 base_lerps_dif[block] = base_lerp_bottom - base_lerps_top[block];
 
-                // Compute x offset dot products.
-                let x_offset_tl = x_tl * x_weighted_increment_vec;
-                let x_offset_tr = x_tr * x_weighted_increment_vec;
-                let x_offset_bl = x_bl * x_weighted_increment_vec;
-                let x_offset_br = x_br * x_weighted_increment_vec;
-
                 // Offset interpolation.
-                x_offset_lerps_top[block] = y_lerp.mul_add(x_offset_tr - x_offset_tl, x_offset_tl);
-                let x_offset_lerp_bottom = y_lerp.mul_add(x_offset_br - x_offset_bl, x_offset_bl);
+                x_offset_lerps_top[block] = y_lerp.mul_add(x_tr - x_tl, x_tl) * x_weighted_increment_vec;
+                let x_offset_lerp_bottom = y_lerp.mul_add(x_br - x_bl, x_bl) * x_weighted_increment_vec;
                 x_offset_lerps_dif[block] = x_offset_lerp_bottom - x_offset_lerps_top[block];
             }
 
