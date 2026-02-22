@@ -16,6 +16,7 @@ impl Perlin {
 
     pub fn noise_2d(
         &mut self,
+        result: &mut PerlinMap,
         pos: Vec2<i32>,
         octaves: u32,
         scale: f32,
@@ -24,9 +25,7 @@ impl Perlin {
         persistence: f32,
         channel: i32,
         octave_offset: f32,
-    ) -> PerlinMap {
-        let mut result: PerlinMap = PerlinMap::new_uninit();
-
+    ) {
         // Get the channel seed for gradient generation.
         let channel_seed: u64 = Random::static_mix_u64(channel as u64);
 
@@ -43,7 +42,7 @@ impl Perlin {
 
         // Add each noise pass to result. Slight performance boost for initializing on the first pass.
         self.single_octave_2d::<true>(
-            &mut result,
+            result,
             pos,
             &cur_octave,
             weight_coef,
@@ -55,7 +54,7 @@ impl Perlin {
             cur_octave.weight *= persistence;
 
             self.single_octave_2d::<false>(
-                &mut result,
+                result,
                 pos,
                 &cur_octave,
                 weight_coef,
@@ -63,8 +62,6 @@ impl Perlin {
                 octave_offset,
             );
         }
-
-        result
     }
 
     pub fn noise_2d_octaves(
@@ -109,5 +106,55 @@ impl Perlin {
         }
 
         result
+    }
+
+    pub fn noise_3d(
+        &mut self,
+        result: &mut PerlinVol,
+        pos: Vec3<i32>,
+        octaves: u32,
+        scale: f32,
+        amplitude: f32,
+        lacunarity: f32,
+        persistence: f32,
+        channel: i32,
+        octave_offset: f32,
+    ) {
+        // Get the channel seed for gradient generation.
+        let channel_seed: u64 = Random::static_mix_u64(channel as u64);
+
+        // Identify weight sum for normalization to [-ampltiude, amplitude]
+        let mut weight_sum = amplitude;
+        let mut cur_weight = amplitude;
+        for _ in 1..octaves {
+            cur_weight *= persistence;
+            weight_sum += cur_weight;
+        }
+        let weight_coef = 1.0 / weight_sum;
+
+        let mut cur_octave = Octave3D::splat(scale, 1.0);
+
+        // Add each noise pass to result. Slight performance boost for initializing on the first pass.
+        self.single_octave_3d::<true>(
+            result,
+            pos,
+            &cur_octave,
+            weight_coef,
+            channel_seed,
+            octave_offset,
+        );
+        for _ in 1..octaves {
+            cur_octave.scale /= lacunarity;
+            cur_octave.weight *= persistence;
+
+            self.single_octave_3d::<false>(
+                result,
+                pos,
+                &cur_octave,
+                weight_coef,
+                channel_seed,
+                octave_offset,
+            );
+        }
     }
 }

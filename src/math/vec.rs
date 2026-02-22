@@ -20,7 +20,7 @@ pub struct Vec3<T> {
 // === Constructors ===
 
 impl<T> Vec2<T> {
-    pub fn new(x: T, y: T) -> Self {
+    pub const fn new(x: T, y: T) -> Self {
         Vec2::<T> {x, y}
     }
 }
@@ -32,7 +32,7 @@ impl<T: Copy> Vec2<T> {
 }
 
 impl<T> Vec3<T> {
-    pub fn new(x: T, y: T, z: T) -> Self {
+    pub const fn new(x: T, y: T, z: T) -> Self {
         Vec3::<T> {x, y, z}
     }
 }

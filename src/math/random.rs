@@ -1,8 +1,7 @@
 // Primitive but fast module for generating random-looking outputs.
 
 use crate::simd::arch_simd::ArchSimd;
-use std::ops::{BitXor, Mul, Shr};
-use std::simd::{Simd, SimdElement};
+use std::simd::num::SimdInt;
 
 pub struct Random {
     core_seed: u64,
@@ -35,11 +34,20 @@ impl Random {
     }
 
     pub fn mix_i32_simd_pair(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>) -> ArchSimd<u32> {
-        let d1 = unsafe { std::mem::transmute::<ArchSimd<i32>, ArchSimd<u32>>(data1) };
-        let d2 = unsafe { std::mem::transmute::<ArchSimd<i32>, ArchSimd<u32>>(data2) };
         let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
 
-        Self::mix_u32_pair_simd_impl(d1 ^ seed_vec, d2)
+        Self::mix_u32_pair_simd_impl(data1.cast() ^ seed_vec, data2.cast())
+    }
+
+    pub fn mix_i32_simd_triple(
+        &self,
+        data1: ArchSimd<i32>,
+        data2: ArchSimd<i32>,
+        data3: ArchSimd<i32>,
+    ) -> ArchSimd<u32> {
+        let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
+
+        Self::mix_u32_triple_simd_impl(data1.cast() ^ seed_vec, data2.cast(), data3.cast())
     }
 
     pub fn mix_u32(&self, data: u32) -> u32 {
@@ -107,6 +115,19 @@ impl Random {
         data1 *= ArchSimd::splat(0x85ebca6b) ^ data2;
         data1 ^= data1 >> 13;
         data1 *= ArchSimd::splat(0xc2b2ae35) ^ data2;
+        data1 ^= data1 >> 16;
+        data1
+    }
+
+    fn mix_u32_triple_simd_impl(
+        mut data1: ArchSimd<u32>,
+        data2: ArchSimd<u32>,
+        data3: ArchSimd<u32>,
+    ) -> ArchSimd<u32> {
+        data1 ^= data1 >> 16;
+        data1 *= ArchSimd::splat(0x85ebca6b) ^ data2;
+        data1 ^= data1 >> 13;
+        data1 *= ArchSimd::splat(0xc2b2ae35) ^ data3;
         data1 ^= data1 >> 16;
         data1
     }

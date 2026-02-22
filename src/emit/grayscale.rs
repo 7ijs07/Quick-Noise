@@ -21,12 +21,14 @@ pub fn write_perlin_height_map(
     let mut pixels = Vec::<u8>::new();
     pixels.resize(dimension * dimension * MAP_SIZE, 0);
 
+    let mut noise = PerlinMap::new_uninit();
     for x in 0..dimension {
         let x_offset = x * dimension * MAP_SIZE;
         for y in 0..dimension {
             let y_offset = y * ROW_SIZE;
 
-            let mut noise: PerlinMap = perlin.noise_2d(
+            perlin.noise_2d(
+                &mut noise,
                 (x as i32, y as i32).into(),
                 octaves,
                 scale,
@@ -114,4 +116,59 @@ pub fn write_perlin_octaves_height_map(
     .expect("Failed to write height map!");
 
     println!("Wrote height map to {}!", path.as_ref().display());
+}
+
+pub fn write_perlin_height_map_3d(
+    path: &str,
+    dimension: usize,
+    octaves: u32,
+    scale: f32,
+    lacunarity: f32,
+    persistence: f32,
+) {
+    let mut perlin = Perlin::new(0);
+
+    let mut pixels = Vec::<u8>::new();
+    pixels.resize(dimension * dimension * MAP_SIZE, 0);
+
+    let mut array = PerlinVol::new_uninit();
+    for x in 0..dimension {
+        let x_offset = x * dimension * MAP_SIZE;
+        for y in 0..dimension {
+            let y_offset = y * ROW_SIZE;
+
+            perlin.noise_3d(
+                &mut array,
+                (x as i32, y as i32, 0).into(),
+                octaves,
+                scale,
+                1.0,
+                lacunarity,
+                persistence,
+                1,
+                0.0,
+            );
+
+            array = (array + PerlinVol::new(1.0)) * PerlinVol::new(127.5);
+
+            for dx in 0..ROW_SIZE {
+                let offset = x_offset + y_offset + dx * ROW_SIZE * dimension;
+                for dy in 0..ROW_SIZE {
+                    pixels[offset + dy] = array[dx * MAP_SIZE + dy * ROW_SIZE] as u8;
+                }
+            }
+        }
+    }
+
+    let pixel_dimension = (dimension * ROW_SIZE) as u32;
+    image::save_buffer(
+        &path,
+        &pixels,
+        pixel_dimension,
+        pixel_dimension,
+        image::ColorType::L8,
+    )
+    .expect("Failed to write height map!");
+
+    println!("Wrote height map to {path}!");
 }

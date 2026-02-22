@@ -103,29 +103,109 @@ impl PerlinContainer2D {
         std::mem::swap(&mut self.tr, &mut self.br);
     }
 }
-
 pub struct PerlinContainer3D {
-    tlf: PerlinVecTriple, // Top left front.
-    trf: PerlinVecTriple, // Top right front.
-    blf: PerlinVecTriple, // Bottom left front.
-    brf: PerlinVecTriple, // Bottom right front.
-    tlb: PerlinVecTriple, // Top left back.
-    trb: PerlinVecTriple, // Top right back.
-    blb: PerlinVecTriple, // Bottom left back.
-    brb: PerlinVecTriple, // Bottom right back.
+    vecs: [PerlinVecTriple; 8],
+    tlf: usize, // Top left front.
+    trf: usize, // Top right front.
+    tlb: usize, // Top left back.
+    trb: usize, // Top right back.
+    blf: usize, // Bottom left front.
+    brf: usize, // Bottom right front.
+    blb: usize, // Bottom left back.
+    brb: usize, // Bottom right back.
 }
 
 impl PerlinContainer3D {
     pub fn new_uninit() -> Self {
         PerlinContainer3D {
-            tlf: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
-            trf: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
-            blf: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
-            brf: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
-            tlb: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
-            trb: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
-            blb: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
-            brb: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+            vecs: [
+                PerlinVecTriple::splat(PerlinVec::new_uninit()),
+                PerlinVecTriple::splat(PerlinVec::new_uninit()),
+                PerlinVecTriple::splat(PerlinVec::new_uninit()),
+                PerlinVecTriple::splat(PerlinVec::new_uninit()),
+                PerlinVecTriple::splat(PerlinVec::new_uninit()),
+                PerlinVecTriple::splat(PerlinVec::new_uninit()),
+                PerlinVecTriple::splat(PerlinVec::new_uninit()),
+                PerlinVecTriple::splat(PerlinVec::new_uninit()),
+            ],
+            tlf: 0,
+            trf: 1,
+            tlb: 2,
+            trb: 3,
+            blf: 4,
+            brf: 5,
+            blb: 6,
+            brb: 7,
         }
     }
+
+    pub fn tlf(&self) -> &PerlinVecTriple { unsafe { &self.vecs.get_unchecked(self.tlf) } }
+    pub fn trf(&self) -> &PerlinVecTriple { unsafe { &self.vecs.get_unchecked(self.trf) } }
+    pub fn blf(&self) -> &PerlinVecTriple { unsafe { &self.vecs.get_unchecked(self.blf) } }
+    pub fn brf(&self) -> &PerlinVecTriple { unsafe { &self.vecs.get_unchecked(self.brf) } }
+    pub fn tlb(&self) -> &PerlinVecTriple { unsafe { &self.vecs.get_unchecked(self.tlb) } }
+    pub fn trb(&self) -> &PerlinVecTriple { unsafe { &self.vecs.get_unchecked(self.trb) } }
+    pub fn blb(&self) -> &PerlinVecTriple { unsafe { &self.vecs.get_unchecked(self.blb) } }
+    pub fn brb(&self) -> &PerlinVecTriple { unsafe { &self.vecs.get_unchecked(self.brb) } }
+
+    pub fn tlf_trf_tlb_trb_mut(&mut self) -> (&mut PerlinVecTriple, &mut PerlinVecTriple, &mut PerlinVecTriple, &mut PerlinVecTriple) {
+        debug_assert!(self.tlf < self.trf);
+        debug_assert!(self.trf < self.tlb);
+        debug_assert!(self.tlb < self.trb);
+        debug_assert!(self.trb < self.vecs.len());
+        unsafe {
+            let ptr = self.vecs.as_mut_ptr();
+            (
+                &mut *ptr.add(self.tlf), &mut *ptr.add(self.trf),
+                &mut *ptr.add(self.tlb), &mut *ptr.add(self.trb),
+            )
+        }
+    }
+
+    pub fn blf_brf_blb_brb_mut(&mut self) -> (&mut PerlinVecTriple, &mut PerlinVecTriple, &mut PerlinVecTriple, &mut PerlinVecTriple) {
+        debug_assert!(self.blf < self.brf);
+        debug_assert!(self.brf < self.blb);
+        debug_assert!(self.blb < self.brb);
+        debug_assert!(self.brb < self.vecs.len());
+        unsafe {
+            let ptr = self.vecs.as_mut_ptr();
+            (
+                &mut *ptr.add(self.blf), &mut *ptr.add(self.brf),
+                &mut *ptr.add(self.blb), &mut *ptr.add(self.brb),
+            )
+        }
+    }
+
+    pub fn swap_top_bottom(&mut self) {
+        std::mem::swap(&mut self.tlf, &mut self.blf);
+        std::mem::swap(&mut self.trf, &mut self.brf);
+        std::mem::swap(&mut self.tlb, &mut self.blb);
+        std::mem::swap(&mut self.trb, &mut self.brb);
+    }
 }
+
+// pub struct PerlinContainer3D {
+//     tlf: PerlinVecTriple, // Top left front.
+//     trf: PerlinVecTriple, // Top right front.
+//     blf: PerlinVecTriple, // Bottom left front.
+//     brf: PerlinVecTriple, // Bottom right front.
+//     tlb: PerlinVecTriple, // Top left back.
+//     trb: PerlinVecTriple, // Top right back.
+//     blb: PerlinVecTriple, // Bottom left back.
+//     brb: PerlinVecTriple, // Bottom right back.
+// }
+
+// impl PerlinContainer3D {
+//     pub fn new_uninit() -> Self {
+//         PerlinContainer3D {
+//             tlf: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+//             trf: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+//             blf: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+//             brf: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+//             tlb: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+//             trb: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+//             blb: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+//             brb: PerlinVecTriple::new(PerlinVec::new_uninit(), PerlinVec::new_uninit(), PerlinVec::new_uninit()),
+//         }
+//     }
+// }

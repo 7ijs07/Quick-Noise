@@ -10,9 +10,9 @@ impl Perlin {
         gradients: &PerlinContainer2D,
         x_frac_start: f32,
         x_increment: f32,
-        x_chunk_size: usize,
         interpolations: &PerlinVecPair,
         x_start_index: usize,
+        x_end_index: usize,
         weight: f32,
         result: &mut PerlinMap,
     ) {
@@ -66,26 +66,401 @@ impl Perlin {
                 x_offset_lerps_dif[block] = x_offset_lerp_bottom - x_offset_lerps_top[block];
             }
 
-            for x_it in x_start_index..x_start_index + x_chunk_size {
-                let x_lerp = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it) });
+            // for x_it in x_start_index..x_start_index + x_chunk_size {
+            //     let x_lerp = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it) } );
 
+            //     for block in 0..NUM_BLOCKS {
+            //         let index: usize = x_it * ROW_SIZE + y_it + block * f32::LANES;
+
+            //         // Final interpolation.
+            //         let output = x_lerp.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+
+            //         // Store if Initialize, Add to and store if not.
+            //         let val = if INITIALIZE { output } else { output + result.load_simd(index) };
+            //         result.store_simd(index, val);
+
+            //         // Accumulate interpolation variables.
+            //         base_lerps_dif[block] += x_offset_lerps_dif[block];
+            //         base_lerps_top[block] += x_offset_lerps_top[block];
+            //     }
+            // }
+
+            let mut x_it = x_start_index;
+            while x_it < x_end_index {
+                if x_it + 4 > x_end_index {
+                    let x_lerp = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it) });
+                    for block in 0..NUM_BLOCKS {
+                        let index: usize = x_it * ROW_SIZE + y_it + block * f32::LANES;
+                        let output = x_lerp.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                        let val = if INITIALIZE {
+                            output
+                        } else {
+                            output + result.load_simd(index)
+                        };
+                        result.store_simd(index, val);
+                        base_lerps_dif[block] += x_offset_lerps_dif[block];
+                        base_lerps_top[block] += x_offset_lerps_top[block];
+                    }
+                    x_it += 1;
+                } else {
+                    let x_lerp_1 = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it) });
+                    let x_lerp_2 =
+                        ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 1) });
+                    let x_lerp_3 =
+                        ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 2) });
+                    let x_lerp_4 =
+                        ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it + 3) });
+
+                    for block in 0..NUM_BLOCKS {
+                        let index: usize = x_it * ROW_SIZE + y_it + block * f32::LANES;
+                        let output = x_lerp_1.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                        let val = if INITIALIZE {
+                            output
+                        } else {
+                            output + result.load_simd(index)
+                        };
+                        result.store_simd(index, val);
+                        base_lerps_dif[block] += x_offset_lerps_dif[block];
+                        base_lerps_top[block] += x_offset_lerps_top[block];
+                    }
+                    for block in 0..NUM_BLOCKS {
+                        let index: usize = x_it * ROW_SIZE + y_it + block * f32::LANES + ROW_SIZE;
+                        let output = x_lerp_2.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                        let val = if INITIALIZE {
+                            output
+                        } else {
+                            output + result.load_simd(index)
+                        };
+                        result.store_simd(index, val);
+                        base_lerps_dif[block] += x_offset_lerps_dif[block];
+                        base_lerps_top[block] += x_offset_lerps_top[block];
+                    }
+                    for block in 0..NUM_BLOCKS {
+                        let index: usize =
+                            x_it * ROW_SIZE + y_it + block * f32::LANES + ROW_SIZE * 2;
+                        let output = x_lerp_3.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                        let val = if INITIALIZE {
+                            output
+                        } else {
+                            output + result.load_simd(index)
+                        };
+                        result.store_simd(index, val);
+                        base_lerps_dif[block] += x_offset_lerps_dif[block];
+                        base_lerps_top[block] += x_offset_lerps_top[block];
+                    }
+                    for block in 0..NUM_BLOCKS {
+                        let index: usize =
+                            x_it * ROW_SIZE + y_it + block * f32::LANES + ROW_SIZE * 3;
+                        let output = x_lerp_4.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                        let val = if INITIALIZE {
+                            output
+                        } else {
+                            output + result.load_simd(index)
+                        };
+                        result.store_simd(index, val);
+                        base_lerps_dif[block] += x_offset_lerps_dif[block];
+                        base_lerps_top[block] += x_offset_lerps_top[block];
+                    }
+                    x_it += 4;
+                }
+            }
+        }
+    }
+
+    // #[inline(never)]
+    pub(super) fn compute_noise_from_vecs_3d<const INITIALIZE: bool>(
+        gradients: &PerlinContainer3D,
+        x_frac_start: f32,
+        y_frac_start: f32,
+        x_increment: f32,
+        y_increment: f32,
+        interpolations: &PerlinVecTriple,
+        x_start_index: usize,
+        y_start_index: usize,
+        x_end_index: usize,
+        y_end_index: usize,
+        weight: f32,
+        result: &mut PerlinVol,
+    ) {
+        let weight_vec = ArchSimd::splat(weight);
+        let x_weighted_increment_vec = ArchSimd::splat(x_increment * weight);
+        let y_weighted_increment_vec = ArchSimd::splat(y_increment * weight);
+        let x_upper_increment = ArchSimd::splat(x_frac_start);
+        let x_lower_increment = ArchSimd::splat(x_frac_start - 1.0);
+        let y_upper_increment = ArchSimd::splat(y_frac_start);
+        let y_lower_increment = ArchSimd::splat(y_frac_start - 1.0);
+
+        let mut y_tf_offset = PerlinVec::new_uninit();
+        let mut y_bf_offset = PerlinVec::new_uninit();
+        let mut y_top_offset_dif = PerlinVec::new_uninit();
+        let mut y_bottom_offset_dif = PerlinVec::new_uninit();
+
+        let mut x_tf_offset = PerlinVec::new_uninit();
+        let mut x_bf_offset = PerlinVec::new_uninit();
+        let mut x_top_offset_dif = PerlinVec::new_uninit();
+        let mut x_bottom_offset_dif = PerlinVec::new_uninit();
+
+        let mut tf_base = PerlinVec::new_uninit();
+        let mut bf_base = PerlinVec::new_uninit();
+        let mut top_base_dif = PerlinVec::new_uninit();
+        let mut bottom_base_dif = PerlinVec::new_uninit();
+
+        for z_it in (0..ROW_SIZE).step_by(f32::LANES) {
+            let z_lerp = interpolations.z.load_simd(z_it);
+
+            let x_tlf = gradients.tlf().x.load_simd(z_it);
+            let x_trf = gradients.trf().x.load_simd(z_it);
+            let x_blf = gradients.blf().x.load_simd(z_it);
+            let x_brf = gradients.brf().x.load_simd(z_it);
+            let x_tlb = gradients.tlb().x.load_simd(z_it);
+            let x_trb = gradients.trb().x.load_simd(z_it);
+            let x_blb = gradients.blb().x.load_simd(z_it);
+            let x_brb = gradients.brb().x.load_simd(z_it);
+
+            let y_tlf = gradients.tlf().y.load_simd(z_it);
+            let y_trf = gradients.trf().y.load_simd(z_it);
+            let y_blf = gradients.blf().y.load_simd(z_it);
+            let y_brf = gradients.brf().y.load_simd(z_it);
+            let y_tlb = gradients.tlb().y.load_simd(z_it);
+            let y_trb = gradients.trb().y.load_simd(z_it);
+            let y_blb = gradients.blb().y.load_simd(z_it);
+            let y_brb = gradients.brb().y.load_simd(z_it);
+
+            let z_tlf = gradients.tlf().z.load_simd(z_it);
+            let z_trf = gradients.trf().z.load_simd(z_it);
+            let z_blf = gradients.blf().z.load_simd(z_it);
+            let z_brf = gradients.brf().z.load_simd(z_it);
+            let z_tlb = gradients.tlb().z.load_simd(z_it);
+            let z_trb = gradients.trb().z.load_simd(z_it);
+            let z_blb = gradients.blb().z.load_simd(z_it);
+            let z_brb = gradients.brb().z.load_simd(z_it);
+
+            let x_prod_tlf = x_tlf * x_upper_increment;
+            let x_prod_trf = x_trf * x_upper_increment;
+            let x_prod_blf = x_blf * x_upper_increment;
+            let x_prod_brf = x_brf * x_upper_increment;
+            let x_prod_tlb = x_tlb * x_lower_increment;
+            let x_prod_trb = x_trb * x_lower_increment;
+            let x_prod_blb = x_blb * x_lower_increment;
+            let x_prod_brb = x_brb * x_lower_increment;
+
+            let y_prod_tlf = y_tlf * y_upper_increment;
+            let y_prod_trf = y_trf * y_upper_increment;
+            let y_prod_blf = y_blf * y_lower_increment;
+            let y_prod_brf = y_brf * y_lower_increment;
+            let y_prod_tlb = y_tlb * y_upper_increment;
+            let y_prod_trb = y_trb * y_upper_increment;
+            let y_prod_blb = y_blb * y_lower_increment;
+            let y_prod_brb = y_brb * y_lower_increment;
+
+            let sum_prod_tlf = x_prod_tlf + y_prod_tlf + z_tlf;
+            let sum_prod_trf = x_prod_trf + y_prod_trf + z_trf;
+            let sum_prod_blf = x_prod_blf + y_prod_blf + z_blf;
+            let sum_prod_brf = x_prod_brf + y_prod_brf + z_brf;
+            let sum_prod_tlb = x_prod_tlb + y_prod_tlb + z_tlb;
+            let sum_prod_trb = x_prod_trb + y_prod_trb + z_trb;
+            let sum_prod_blb = x_prod_blb + y_prod_blb + z_blb;
+            let sum_prod_brb = x_prod_brb + y_prod_brb + z_brb;
+
+            let x_tf_offset_vec = z_lerp.mul_add(x_trf - x_tlf, x_tlf) * x_weighted_increment_vec;
+            let x_bf_offset_vec = z_lerp.mul_add(x_brf - x_blf, x_blf) * x_weighted_increment_vec;
+            let x_tb_offset_vec = z_lerp.mul_add(x_trb - x_tlb, x_tlb) * x_weighted_increment_vec;
+            let x_bb_offset_vec = z_lerp.mul_add(x_brb - x_blb, x_blb) * x_weighted_increment_vec;
+
+            let y_tf_offset_vec = z_lerp.mul_add(y_trf - y_tlf, y_tlf) * y_weighted_increment_vec;
+            let y_bf_offset_vec = z_lerp.mul_add(y_brf - y_blf, y_blf) * y_weighted_increment_vec;
+            let y_tb_offset_vec = z_lerp.mul_add(y_trb - y_tlb, y_tlb) * y_weighted_increment_vec;
+            let y_bb_offset_vec = z_lerp.mul_add(y_brb - y_blb, y_blb) * y_weighted_increment_vec;
+
+            let tf_base_vec =
+                z_lerp.mul_add(sum_prod_trf - sum_prod_tlf, sum_prod_tlf) * weight_vec;
+            let bf_base_vec =
+                z_lerp.mul_add(sum_prod_brf - sum_prod_blf, sum_prod_blf) * weight_vec;
+            let tb_base_vec =
+                z_lerp.mul_add(sum_prod_trb - sum_prod_tlb, sum_prod_tlb) * weight_vec;
+            let bb_base_vec =
+                z_lerp.mul_add(sum_prod_brb - sum_prod_blb, sum_prod_blb) * weight_vec;
+
+            x_tf_offset.store_simd(z_it, x_tf_offset_vec);
+            x_bf_offset.store_simd(z_it, x_bf_offset_vec);
+            x_top_offset_dif.store_simd(z_it, x_tb_offset_vec - x_tf_offset_vec);
+            x_bottom_offset_dif.store_simd(z_it, x_bb_offset_vec - x_bf_offset_vec);
+
+            y_tf_offset.store_simd(z_it, y_tf_offset_vec);
+            y_bf_offset.store_simd(z_it, y_bf_offset_vec);
+            y_top_offset_dif.store_simd(z_it, y_tb_offset_vec - y_tf_offset_vec);
+            y_bottom_offset_dif.store_simd(z_it, y_bb_offset_vec - y_bf_offset_vec);
+
+            tf_base.store_simd(z_it, tf_base_vec);
+            bf_base.store_simd(z_it, bf_base_vec);
+            top_base_dif.store_simd(z_it, tb_base_vec - tf_base_vec);
+            bottom_base_dif.store_simd(z_it, bb_base_vec - bf_base_vec);
+        }
+
+        const NUM_BLOCKS_POSSIBLE: usize = NUM_SIMD_REG / 8;
+        const MAX_NUM_BLOCKS: usize = ROW_SIZE / f32::LANES;
+        const NUM_BLOCKS: usize = NUM_BLOCKS_POSSIBLE.min(MAX_NUM_BLOCKS);
+
+        for x_it in x_start_index..x_end_index {
+            let x_lerp = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(x_it) });
+            let x_cur_vec = ArchSimd::splat(x_it as f32);
+
+            for z_it in (0..ROW_SIZE).step_by(f32::LANES * NUM_BLOCKS) {
+                // Set up registers per block. Initialization is just to keep Rust happy. Compiler will optimize away.
+                let mut base_lerps_top: [ArchSimd<f32>; NUM_BLOCKS] = Default::default();
+                let mut base_lerps_dif: [ArchSimd<f32>; NUM_BLOCKS] = Default::default();
+                let mut y_offset_lerps_top: [ArchSimd<f32>; NUM_BLOCKS] = Default::default();
+                let mut y_offset_lerps_dif: [ArchSimd<f32>; NUM_BLOCKS] = Default::default();
+
+                // These blocked loops will get entirely unrolled by the compiler.
                 for block in 0..NUM_BLOCKS {
-                    let index: usize = x_it * ROW_SIZE + y_it + block * f32::LANES;
+                    let x_tf_offset_vec = x_tf_offset.load_simd(z_it + f32::LANES * block);
+                    let x_bf_offset_vec = x_bf_offset.load_simd(z_it + f32::LANES * block);
+                    let x_top_offset_dif_vec =
+                        x_top_offset_dif.load_simd(z_it + f32::LANES * block);
+                    let x_bottom_offset_dif_vec =
+                        x_bottom_offset_dif.load_simd(z_it + f32::LANES * block);
 
-                    // Final interpolation.
-                    let output = x_lerp.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                    let y_tf_offset_vec = y_tf_offset.load_simd(z_it + f32::LANES * block);
+                    let y_bf_offset_vec = y_bf_offset.load_simd(z_it + f32::LANES * block);
+                    let y_top_offset_dif_vec =
+                        y_top_offset_dif.load_simd(z_it + f32::LANES * block);
+                    let y_bottom_offset_dif_vec =
+                        y_bottom_offset_dif.load_simd(z_it + f32::LANES * block);
 
-                    // Store if Initialize, Add to and store if not.
-                    let val = if INITIALIZE {
-                        output
+                    let tf_base_vec = tf_base.load_simd(z_it + f32::LANES * block);
+                    let bf_base_vec = bf_base.load_simd(z_it + f32::LANES * block);
+                    let top_base_dif_vec = top_base_dif.load_simd(z_it + f32::LANES * block);
+                    let bottom_base_dif_vec = bottom_base_dif.load_simd(z_it + f32::LANES * block);
+
+                    let x_top_offset = x_lerp.mul_add(x_top_offset_dif_vec, x_tf_offset_vec);
+                    let x_bottom_offset = x_lerp.mul_add(x_bottom_offset_dif_vec, x_bf_offset_vec);
+
+                    base_lerps_top[block] = x_cur_vec
+                        .mul_add(x_top_offset, x_lerp.mul_add(top_base_dif_vec, tf_base_vec));
+                    let bottom_base = x_cur_vec.mul_add(
+                        x_bottom_offset,
+                        x_lerp.mul_add(bottom_base_dif_vec, bf_base_vec),
+                    );
+                    base_lerps_dif[block] = bottom_base - base_lerps_top[block];
+
+                    y_offset_lerps_top[block] =
+                        x_lerp.mul_add(y_top_offset_dif_vec, y_tf_offset_vec);
+                    let y_bottom_offset = x_lerp.mul_add(y_bottom_offset_dif_vec, y_bf_offset_vec);
+                    y_offset_lerps_dif[block] = y_bottom_offset - y_offset_lerps_top[block];
+                }
+
+                // for y_it in y_start_index..y_start_index + y_chunk_size {
+                //     let y_lerp = ArchSimd::splat(unsafe { interpolations.x.get_unchecked(y_it) } );
+
+                //     for block in 0..NUM_BLOCKS {
+                //         let index: usize = x_it * MAP_SIZE + y_it * ROW_SIZE + z_it + block * f32::LANES;
+                //         let output = y_lerp.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                //         let val = if INITIALIZE { output } else { output + result.load_simd(index) };
+                //         result.store_simd(index, val);
+                //         base_lerps_dif[block] += y_offset_lerps_dif[block];
+                //         base_lerps_top[block] += y_offset_lerps_top[block];
+                //     }
+                // }
+
+                let mut y_it = y_start_index;
+                while y_it < y_end_index {
+                    if y_it + 4 <= y_end_index {
+                        let y_lerp_1 =
+                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it) });
+                        let y_lerp_2 =
+                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 1) });
+                        let y_lerp_3 =
+                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 2) });
+                        let y_lerp_4 =
+                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it + 3) });
+
+                        for block in 0..NUM_BLOCKS {
+                            let index: usize =
+                                x_it * MAP_SIZE + y_it * ROW_SIZE + z_it + block * f32::LANES;
+                            let output =
+                                y_lerp_1.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let val = if INITIALIZE {
+                                output
+                            } else {
+                                output + result.load_simd(index)
+                            };
+                            result.store_simd(index, val);
+                            base_lerps_dif[block] += y_offset_lerps_dif[block];
+                            base_lerps_top[block] += y_offset_lerps_top[block];
+                        }
+                        for block in 0..NUM_BLOCKS {
+                            let index: usize = x_it * MAP_SIZE
+                                + y_it * ROW_SIZE
+                                + z_it
+                                + block * f32::LANES
+                                + ROW_SIZE;
+                            let output =
+                                y_lerp_2.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let val = if INITIALIZE {
+                                output
+                            } else {
+                                output + result.load_simd(index)
+                            };
+                            result.store_simd(index, val);
+                            base_lerps_dif[block] += y_offset_lerps_dif[block];
+                            base_lerps_top[block] += y_offset_lerps_top[block];
+                        }
+                        for block in 0..NUM_BLOCKS {
+                            let index: usize = x_it * MAP_SIZE
+                                + y_it * ROW_SIZE
+                                + z_it
+                                + block * f32::LANES
+                                + ROW_SIZE * 2;
+                            let output =
+                                y_lerp_3.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let val = if INITIALIZE {
+                                output
+                            } else {
+                                output + result.load_simd(index)
+                            };
+                            result.store_simd(index, val);
+                            base_lerps_dif[block] += y_offset_lerps_dif[block];
+                            base_lerps_top[block] += y_offset_lerps_top[block];
+                        }
+                        for block in 0..NUM_BLOCKS {
+                            let index: usize = x_it * MAP_SIZE
+                                + y_it * ROW_SIZE
+                                + z_it
+                                + block * f32::LANES
+                                + ROW_SIZE * 3;
+                            let output =
+                                y_lerp_4.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let val = if INITIALIZE {
+                                output
+                            } else {
+                                output + result.load_simd(index)
+                            };
+                            result.store_simd(index, val);
+                            base_lerps_dif[block] += y_offset_lerps_dif[block];
+                            base_lerps_top[block] += y_offset_lerps_top[block];
+                        }
+                        y_it += 4;
                     } else {
-                        output + result.load_simd(index)
-                    };
-                    result.store_simd(index, val);
+                        let y_lerp =
+                            ArchSimd::splat(unsafe { interpolations.y.get_unchecked(y_it) });
 
-                    // Accumulate interpolation variables.
-                    base_lerps_dif[block] += x_offset_lerps_dif[block];
-                    base_lerps_top[block] += x_offset_lerps_top[block];
+                        for block in 0..NUM_BLOCKS {
+                            let index: usize =
+                                x_it * MAP_SIZE + y_it * ROW_SIZE + z_it + block * f32::LANES;
+                            let output =
+                                y_lerp.mul_add(base_lerps_dif[block], base_lerps_top[block]);
+                            let val = if INITIALIZE {
+                                output
+                            } else {
+                                output + result.load_simd(index)
+                            };
+                            result.store_simd(index, val);
+                            base_lerps_dif[block] += y_offset_lerps_dif[block];
+                            base_lerps_top[block] += y_offset_lerps_top[block];
+                        }
+                        y_it += 1;
+                    }
                 }
             }
         }
