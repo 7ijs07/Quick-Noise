@@ -30,7 +30,7 @@ impl Perlin {
         
         // Main vectorized bit mixing loop.
         let lane_increment = ArchSimd::splat(f32::LANES as i32);
-        for i in (f32::LANES..y_num_loops as usize).step_by(f32::LANES) {
+        for i in (f32::LANES..y_num_loops as usize + 1).step_by(f32::LANES) {
             y_vec += lane_increment;
             let grad_vec: ArchSimd<u32> = self.random_gen.mix_i32_simd_pair(x_vec, y_vec) & ArchSimd::splat(0xF as u32);
             grad_array.store_simd(i as usize, grad_vec);
@@ -43,12 +43,10 @@ impl Perlin {
 
         // Loop through the y chunks.
         let mut cur_index: u32 = 0;
-        let mut y_it_scale: f32 = 0.0;
+        let mut y_next_index_exact: f32 = y_next_index_offset;
         for y_it in 0..y_num_loops {
 
             // Find range of gradients to set.
-            let y_next_index_exact: f32 = y_it_scale + y_next_index_offset;
-
             debug_assert!(y_next_index_exact >= 0.0 && y_next_index_exact.is_finite());
             let y_next_index: u32 = unsafe { y_next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) }; // Never negative or NaN.
             let set_amount: u32 = y_next_index - cur_index;
@@ -71,7 +69,7 @@ impl Perlin {
             if y_next_index == 32 { break; }
 
             cur_index = y_next_index;
-            y_it_scale += y_scale;
+            y_next_index_exact += y_scale;
         }
 
         // Compute y dot products (Better to do here since these dot products get reused and operate per element).

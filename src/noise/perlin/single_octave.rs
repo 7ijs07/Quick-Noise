@@ -42,6 +42,7 @@ impl Perlin {
         let num_loops: Vec2<u32> = (frac_start + increment * ROW_SIZE as f32).ceil().as_u32();
 
         // Get the amount that next index fraction needs to increase by each iteration.
+        // println!("frac_start: {}", frac_start.x);
         let next_index_offset: Vec2<f32> = (1.0 - frac_start) * octave.scale + HI_EPSILON as f32;
 
         // Initialize gradient vectors.
@@ -53,12 +54,10 @@ impl Perlin {
 
         // Iterate through single x chunks but full y chunks.
         let mut x_cur_index: u32 = 0;
-        let mut x_it_scale: f32 = 0.0;
+        let mut x_next_index_exact: f32 = next_index_offset.x;
         for x_it in 0..num_loops.x {
 
             // Identify the current range of x gradients.
-            let x_next_index_exact = x_it_scale + next_index_offset.x;
-            
             debug_assert!(x_next_index_exact >= 0.0 && x_next_index_exact.is_finite());
             let x_next_index: u32 = unsafe { x_next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) as u32 };
 
@@ -82,7 +81,7 @@ impl Perlin {
             if x_next_index == 32 { break; }
 
             x_cur_index = x_next_index;
-            x_it_scale += octave.scale.x;
+            x_next_index_exact += octave.scale.x;
         }
     }
 }
