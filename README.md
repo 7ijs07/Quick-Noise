@@ -14,7 +14,8 @@ Rust nightly is **required** to use this library. It utilizes std::simd, which i
 
 Uniform grid computes a batch of noise results positioned on a uniform grid.
 These batches are much faster than a regular noise call, but constrain the input position patterns.
-Ideal for terrain and texture generation that needs uniform noise.
+Ideal for terrain and texture generation that needs uniform noise. 2D Perlin operates on 32x32 (1024 total) batches,
+while 3D Perlin operates on 32x32x32 (32768 total) batches.
 
 Scale measures how far apart gridpoints are from eachother, also known as frequency.
 A higher scale means noise is smoother and changes slower from sample to sample.
