@@ -1,4 +1,4 @@
-#![feature(const_cmp, const_trait_impl, generic_const_exprs)]
+#![feature(const_cmp, const_trait_impl, generic_const_exprs, const_array, associated_type_defaults)]
 #![feature(portable_simd)]
 
 pub mod simd {

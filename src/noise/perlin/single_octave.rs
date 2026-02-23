@@ -77,7 +77,9 @@ impl Perlin {
             d_vecs.swap_top_bottom();
 
             // Early exit case. Maybe num_loops calculation can be adjusted to remove this?
-            if x_next_index == ROW_SIZE as u32 { break; }
+            if x_next_index == ROW_SIZE as u32 { 
+                break;
+            }
 
             x_cur_index = x_next_index;
             x_next_index_exact += octave.scale.x;
