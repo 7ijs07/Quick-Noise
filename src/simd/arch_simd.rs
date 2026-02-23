@@ -5,7 +5,7 @@ use std::simd::{Simd, SimdElement};
 pub const trait SimdConstants {
     const WIDTH: usize;
     const NUM_REG: usize;
-    const LANES: usize = Self::WIDTH / std::mem::size_of::<f32>();
+    const LANES: usize = 4;
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
