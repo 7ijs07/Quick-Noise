@@ -11,6 +11,7 @@ impl NoiseGenerator for Perlin {
     type Output2D = PerlinMap;
     type Output3D = PerlinVol;
 
+    #[inline(always)]
     fn create_output_2d() -> Self::Output2D {
         return unsafe { MaybeUninit::uninit().assume_init() };
     }
