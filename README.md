@@ -27,13 +27,13 @@ Results are measured in billions of points per second for a single noise pass.
 
 | Scale | 2D Perlin | 3D Perlin |
 |-------|-----------|-----------|
-| 64    | 10.2 B/s  | 13.3 B/s  |
-| 48    | 9.08 B/s  | 12.6 B/s  |
-| 32    | 10.0 B/s  | 13.3 B/s  |
-| 24    | 7.77 B/s  | 11.1 B/s  |
-| 16    | 8.02 B/s  | 11.6 B/s  |
-| 8     | 5.34 B/s  | 7.27 B/s  |
-| 4     | 2.50 B/s  | 2.27 B/s  |
+| 64    | 10.2 B/s  | 13.4 B/s  |
+| 48    | 9.08 B/s  | 12.7 B/s  |
+| 32    | 10.0 B/s  | 13.4 B/s  |
+| 24    | 7.77 B/s  | 11.3 B/s  |
+| 16    | 8.02 B/s  | 11.8 B/s  |
+| 8     | 5.34 B/s  | 7.82 B/s  |
+| 4     | 2.50 B/s  | 2.69 B/s  |
 
 # Running
 
