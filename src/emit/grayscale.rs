@@ -139,7 +139,7 @@ pub fn write_perlin_height_map_3d(
 
             perlin.uniform_grid_3d(
                 &mut array,
-                (x as i32, y as i32, 0).into(),
+                (0, x as i32, y as i32).into(),
                 octaves,
                 scale,
                 1.0,
@@ -154,7 +154,7 @@ pub fn write_perlin_height_map_3d(
             for dx in 0..ROW_SIZE {
                 let offset = x_offset + y_offset + dx * ROW_SIZE * dimension;
                 for dy in 0..ROW_SIZE {
-                    pixels[offset + dy] = array[dx * MAP_SIZE + dy * ROW_SIZE] as u8;
+                    pixels[offset + dy] = array[dx * ROW_SIZE + dy] as u8;
                 }
             }
         }
