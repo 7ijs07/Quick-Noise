@@ -1,6 +1,6 @@
 // Primitive but fast module for generating random-looking outputs.
 
-use crate::simd::arch_simd::{ArchSimd, Current, SimdConstants, SimdInfo};
+use crate::simd::arch_simd::ArchSimd;
 use std::simd::num::SimdInt;
 
 pub struct Random {
@@ -33,22 +33,21 @@ impl Random {
         Self::mix_u64_pair_impl(data1 ^ self.channel_seed, data2)
     }
 
-    pub fn mix_i32_simd_pair<SC: const SimdConstants>(&self, data1: ArchSimd<SC, i32>, data2: ArchSimd<SC, i32>) -> ArchSimd<SC, u32> {
-        let seed_vec = ArchSimd::<SC, u32>::splat(self.channel_seed as u32);
+    pub fn mix_i32_simd_pair(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>) -> ArchSimd<u32> {
+        let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
 
-        Self::mix_u32_pair_simd_impl::<SC>(data1.cast() ^ seed_vec, data2.cast())
+        Self::mix_u32_pair_simd_impl(data1.cast() ^ seed_vec, data2.cast())
     }
 
-    pub fn mix_i32_simd_triple<SC: const SimdConstants>(
+    pub fn mix_i32_simd_triple(
         &self,
-        data1: ArchSimd<SC, i32>,
-        data2: ArchSimd<SC, i32>,
-        data3: ArchSimd<SC, i32>,
-    ) -> ArchSimd<SC, u32> {
-        let seed_vec: ArchSimd<SC, u32> = ArchSimd::splat(self.channel_seed as u32);
-        let data1_cast: ArchSimd<SC, u32> = data1.cast();
+        data1: ArchSimd<i32>,
+        data2: ArchSimd<i32>,
+        data3: ArchSimd<i32>,
+    ) -> ArchSimd<u32> {
+        let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
 
-        Self::mix_u32_triple_simd_impl::<SC>(data1_cast ^ seed_vec, data2.cast(), data3.cast())
+        Self::mix_u32_triple_simd_impl(data1.cast() ^ seed_vec, data2.cast(), data3.cast())
     }
 
     pub fn mix_u32(&self, data: u32) -> u32 {
@@ -111,7 +110,7 @@ impl Random {
         data
     }
 
-    fn mix_u32_pair_simd_impl<SC: const SimdConstants>(mut data1: ArchSimd<SC, u32>, data2: ArchSimd<SC, u32>) -> ArchSimd<SC, u32> {
+    fn mix_u32_pair_simd_impl(mut data1: ArchSimd<u32>, data2: ArchSimd<u32>) -> ArchSimd<u32> {
         data1 ^= data1 >> 16;
         data1 *= ArchSimd::splat(0x85ebca6b) ^ data2;
         data1 ^= data1 >> 13;
@@ -120,11 +119,11 @@ impl Random {
         data1
     }
 
-    fn mix_u32_triple_simd_impl<SC: const SimdConstants>(
-        mut data1: ArchSimd<SC, u32>,
-        data2: ArchSimd<SC, u32>,
-        data3: ArchSimd<SC, u32>,
-    ) -> ArchSimd<SC, u32> {
+    fn mix_u32_triple_simd_impl(
+        mut data1: ArchSimd<u32>,
+        data2: ArchSimd<u32>,
+        data3: ArchSimd<u32>,
+    ) -> ArchSimd<u32> {
         data1 ^= data1 >> 16;
         data1 *= ArchSimd::splat(0x85ebca6b) ^ data2;
         data1 ^= data1 >> 13;

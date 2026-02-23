@@ -1,5 +1,4 @@
 use crate::math::vec::{Vec2, Vec3};
-use crate::simd::arch_simd::Current;
 use crate::simd::simd_array::SimdArray;
 
 pub const ROW_SIZE: usize = 32;
@@ -7,11 +6,11 @@ pub const MAP_SIZE: usize = 1024;
 pub const VOL_SIZE: usize = 32768;
 
 pub const LO_EPSILON: f64 = 1e-4;
-pub const HI_EPSILON: f64 = 1.0 - LO_EPSILON;
+pub const HI_EPSILON: f64 = 1.0 - 1e-4;
 
-pub type PerlinVec = SimdArray<Current, f32, ROW_SIZE>;
-pub type PerlinMap = SimdArray<Current, f32, MAP_SIZE>;
-pub type PerlinVol = SimdArray<Current, f32, VOL_SIZE>;
+pub type PerlinVec = SimdArray<f32, ROW_SIZE>;
+pub type PerlinMap = SimdArray<f32, MAP_SIZE>;
+pub type PerlinVol = SimdArray<f32, VOL_SIZE>;
 
 pub type PerlinVecPair = Vec2<PerlinVec>;
 pub type PerlinVecTriple = Vec3<PerlinVec>;

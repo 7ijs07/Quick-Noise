@@ -1,11 +1,10 @@
 use std::fmt;
-use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign, Neg};
 use std::simd::prelude::{SimdFloat, SimdPartialOrd};
 use std::simd::{Mask, Simd, SimdElement, StdFloat};
 use crate::simd::simd_array::fmt::Debug;
-use crate::simd::arch_simd::{Current, ArchSimd, SimdConstants, SimdInfo};
+use crate::simd::arch_simd::{ArchSimd, SimdInfo};
 use num_traits::NumCast;
 use num_traits::float::Float;
 
@@ -13,16 +12,16 @@ use num_traits::float::Float;
 
 macro_rules! impl_simd_array_op {
     ($trait:ident, $assign_trait:ident, $method:ident, $assign_method:ident, $op:tt, $assign_op:tt) => {
-        impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> $trait for SimdArray<SC, T, N>
+        impl<T: SimdInfo, const N: usize> $trait for SimdArray<T, N>
         where
-            ArchSimd<SC, T>:,
+            ArchSimd<T>:,
             T: $trait<Output = T>,
-            ArchSimd<SC, T>: $trait<Output = ArchSimd<SC, T>>,
+            ArchSimd<T>: $trait<Output = ArchSimd<T>>,
         {
-            type Output = SimdArray<SC, T, N>;
-            fn $method(self, other: SimdArray<SC, T, N>) -> SimdArray<SC, T, N> {
-                let mut result = SimdArray::<SC, T, N>::new_uninit();
-                for i in (0..Self::TAIL_START).step_by(SC::LANES) {
+            type Output = SimdArray<T, N>;
+            fn $method(self, other: SimdArray<T, N>) -> SimdArray<T, N> {
+                let mut result = SimdArray::<T, N>::new_uninit();
+                for i in (0..Self::TAIL_START).step_by(T::LANES) {
                     let caller_vec = self.load_simd(i);
                     let other_vec = other.load_simd(i);
                     result.store_simd(i, caller_vec $op other_vec);
@@ -36,14 +35,14 @@ macro_rules! impl_simd_array_op {
             }
         }
 
-        impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> $assign_trait for SimdArray<SC, T, N>
+        impl<T: SimdInfo, const N: usize> $assign_trait for SimdArray<T, N>
         where
-            ArchSimd<SC, T>:,
+            ArchSimd<T>:,
             T: $assign_trait,
-            ArchSimd<SC, T>: $assign_trait,
+            ArchSimd<T>: $assign_trait,
         {
-            fn $assign_method(&mut self, other: SimdArray<SC, T, N>) {
-                for i in (0..Self::TAIL_START).step_by(SC::LANES) {
+            fn $assign_method(&mut self, other: SimdArray<T, N>) {
+                for i in (0..Self::TAIL_START).step_by(T::LANES) {
                     let mut caller_vec = self.load_simd(i);
                     caller_vec $assign_op other.load_simd(i);
                     self.store_simd(i, caller_vec);
@@ -59,10 +58,9 @@ macro_rules! impl_simd_array_op {
 }
 
 #[repr(align(64))]
-#[derive(Clone, Copy)]
-pub struct SimdArray<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> {
+#[derive(Copy)]
+pub struct SimdArray<T: SimdInfo, const N: usize> {
     pub data: [MaybeUninit<T>; N],
-    pub _marker: PhantomData<SC>,
 }
 
 // === Tail Info ===
@@ -73,33 +71,31 @@ pub trait TailInfo {
     const HAS_TAIL: bool;
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> TailInfo for SimdArray<SC, T, N> {
-    const TAIL_SIZE: usize = N % SC::LANES;
+impl<T: SimdInfo, const N: usize> TailInfo for SimdArray<T, N> {
+    const TAIL_SIZE: usize = N % T::LANES;
     const TAIL_START: usize = N - Self::TAIL_SIZE;
     const HAS_TAIL: bool = Self::TAIL_SIZE > 0;
 }
 
 // === Constructors ===
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> SimdArray<SC, T, N> {
+impl<T: SimdInfo, const N: usize> SimdArray<T, N> {
     pub fn new_uninit() -> Self {
         Self {
             data: unsafe { MaybeUninit::uninit().assume_init() },
-            _marker: PhantomData
         }
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + Copy, const N: usize> SimdArray<SC, T, N> {
+impl<T: SimdInfo + Copy, const N: usize> SimdArray<T, N> {
     pub fn new(value: T) -> Self {
         Self {
             data: [MaybeUninit::new(value); N],
-            _marker: PhantomData
         }
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + Default + Copy, const N: usize> Default for SimdArray<SC, T, N> {
+impl<T: SimdInfo + Default + Copy, const N: usize> Default for SimdArray<T, N> {
     fn default() -> Self {
         Self::new(T::default())
     }
@@ -107,7 +103,7 @@ impl<SC: const SimdConstants, T: const SimdInfo<SC> + Default + Copy, const N: u
 
 // === Indexing ===
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> Index<usize> for SimdArray<SC, T, N> {
+impl<T: SimdInfo, const N: usize> Index<usize> for SimdArray<T, N> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -116,14 +112,14 @@ impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> Index<usize
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> IndexMut<usize> for SimdArray<SC, T, N> {
+impl<T: SimdInfo, const N: usize> IndexMut<usize> for SimdArray<T, N> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         debug_assert!(index < N);
         unsafe { self.data[index].assume_init_mut() }
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> SimdArray<SC, T, N> {
+impl<T: SimdInfo, const N: usize> SimdArray<T, N> {
     #[inline(always)]
     pub unsafe fn get_unchecked(&self, index: usize) -> T {
         debug_assert!(index < N);
@@ -139,7 +135,13 @@ impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> SimdArray<S
 
 // === Utility Traits ===
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + fmt::Debug, const N: usize> fmt::Debug for SimdArray<SC, T, N> {
+impl<T: SimdInfo + Copy, const N: usize> Clone for SimdArray<T, N> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T: SimdInfo + fmt::Debug, const N: usize> fmt::Debug for SimdArray<T, N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list()
             .entries(unsafe { self.data.assume_init_ref() })
@@ -149,43 +151,43 @@ impl<SC: const SimdConstants, T: const SimdInfo<SC> + fmt::Debug, const N: usize
 
 // === Simd Access ===
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> SimdArray<SC, T, N> {
+impl<T: SimdInfo, const N: usize> SimdArray<T, N> {
     #[inline(always)]
-    pub fn load_simd(&self, index: usize) -> ArchSimd<SC, T> {
-        debug_assert!(index + SC::LANES <= N);
-        debug_assert!(index % SC::LANES == 0);
+    pub fn load_simd(&self, index: usize) -> ArchSimd<T> {
+        debug_assert!(index + T::LANES <= N);
+        debug_assert!(index % T::LANES == 0);
         unsafe {
             let ptr = self.data.as_ptr().add(index) as *const T;
-            std::ptr::read(ptr as *const ArchSimd<SC, T>)
+            std::ptr::read(ptr as *const ArchSimd<T>)
         }
     }
 
     #[inline(always)]
-    pub fn store_simd(&mut self, index: usize, vec: ArchSimd<SC, T>) {
-        debug_assert!(index + SC::LANES <= N);
-        debug_assert!(index % SC::LANES == 0);
+    pub fn store_simd(&mut self, index: usize, vec: ArchSimd<T>) {
+        debug_assert!(index + T::LANES <= N);
+        debug_assert!(index % T::LANES == 0);
         unsafe {
             let ptr = self.data.as_mut_ptr().add(index) as *mut T;
-            std::ptr::write(ptr as *mut ArchSimd<SC, T>, vec);
+            std::ptr::write(ptr as *mut ArchSimd<T>, vec);
         }
     }
 
     #[inline(always)]
-    pub fn partial_store_simd(&mut self, index: usize, vec: ArchSimd<SC, T>, amount: usize) {
+    pub fn partial_store_simd(&mut self, index: usize, vec: ArchSimd<T>, amount: usize) {
         debug_assert!(index + amount <= N);
-        let indices = Simd::<i32, { SC::LANES }>::from_array(std::array::from_fn(|i| i as i32));
-        let amounts = Simd::<i32, { SC::LANES }>::splat(amount as i32);
+        let indices = Simd::<i32, { T::LANES }>::from_array(std::array::from_fn(|i| i as i32));
+        let amounts = Simd::<i32, { T::LANES }>::splat(amount as i32);
         let mask = amounts.simd_gt(indices).cast::<<T as SimdElement>::Mask>();
         self.masked_store_simd(index, vec, mask);
     }
 
     #[inline(always)]
-    pub fn masked_store_simd(&mut self, index: usize, vec: ArchSimd<SC, T>, mask: Mask<<T as SimdElement>::Mask, { SC::LANES }>) {
+    pub fn masked_store_simd(&mut self, index: usize, vec: ArchSimd<T>, mask: Mask<<T as SimdElement>::Mask, { T::LANES }>) {
         debug_assert!(index < N);
         unsafe {
             let slice = std::slice::from_raw_parts_mut(
                 self.data.as_mut_ptr().add(index) as *mut T,
-                SC::LANES,
+                T::LANES,
             );
             vec.store_select_unchecked(slice, mask);
         }
@@ -199,16 +201,16 @@ impl_simd_array_op!(Sub, SubAssign, sub, sub_assign, -, -=);
 impl_simd_array_op!(Mul, MulAssign, mul, mul_assign, *, *=);
 impl_simd_array_op!(Div, DivAssign, div, div_assign, /, /=);
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> Neg for SimdArray<SC, T, N>
+impl<T: SimdInfo, const N: usize> Neg for SimdArray<T, N>
 where
-    ArchSimd<SC, T>:,
+    ArchSimd<T>:,
     T: Neg<Output = T>,
-    ArchSimd<SC, T>: Neg<Output = ArchSimd<SC, T>>,
+    ArchSimd<T>: Neg<Output = ArchSimd<T>>,
 {
-    type Output = SimdArray<SC, T, N>;
-    fn neg(self) -> SimdArray<SC, T, N> {
-        let mut result = SimdArray::<SC, T, N>::new_uninit();
-        for i in (0..Self::TAIL_START).step_by(SC::LANES) {
+    type Output = SimdArray<T, N>;
+    fn neg(self) -> SimdArray<T, N> {
+        let mut result = SimdArray::<T, N>::new_uninit();
+        for i in (0..Self::TAIL_START).step_by(T::LANES) {
             let data = self.load_simd(i);
             result.store_simd(i, -data);
         }
@@ -222,36 +224,36 @@ where
 
 // === Additional Operations ===
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC>, const N: usize> SimdArray<SC, T, N>
+impl<T: SimdInfo, const N: usize> SimdArray<T, N>
 where
-    ArchSimd<SC, T>:,
+    ArchSimd<T>:,
 {
     pub fn multiset_many<const M: usize>(arrays: &mut [&mut Self; M], values: &[T; M], mut index: usize, mut amount: isize) {
-        let vecs: [ArchSimd<SC, T>; M] = std::array::from_fn(|i| ArchSimd::<SC, T>::splat(values[i]));
+        let vecs: [ArchSimd<T>; M] = std::array::from_fn(|i| ArchSimd::<T>::splat(values[i]));
 
-        let indices = Simd::<i32, {SC::LANES}>::from_array(std::array::from_fn(|i| i as i32));
+        let indices = Simd::<i32, {T::LANES}>::from_array(std::array::from_fn(|i| i as i32));
         while amount > 0 {
-            let amounts = Simd::<i32, {SC::LANES}>::splat(amount as i32);
+            let amounts = Simd::<i32, {T::LANES}>::splat(amount as i32);
             let mask = indices.simd_lt(amounts).cast::<<T as SimdElement>::Mask>();
             for i in 0..M {
                 debug_assert!(i < M);
                 unsafe { arrays[i].masked_store_simd(index, *vecs.get_unchecked(i), mask); }
             }
-            amount -= SC::LANES as isize;
-            index += SC::LANES;
+            amount -= T::LANES as isize;
+            index += T::LANES;
         }
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + std::default::Default, const N: usize> SimdArray<SC, T, N>
+impl<T: SimdInfo + std::default::Default, const N: usize> SimdArray<T, N>
 where
-    ArchSimd<SC, T>:,
+    ArchSimd<T>:,
 {
     // No easily built-in std::simd solution, let compiler auto-vectorize.
     // #[inline(never)]
-    pub fn load_gather<const M: usize>(&mut self, load_index: usize, source_array: &[T; M], indicies: ArchSimd<SC, u32>) {
+    pub fn load_gather<const M: usize>(&mut self, load_index: usize, source_array: &[T; M], indicies: ArchSimd<u32>) {
         let indicies_array = indicies.to_array();
-        for i in 0..SC::LANES {
+        for i in 0..T::LANES {
             unsafe {
                 *self.get_unchecked_mut(load_index + i) = *source_array.get_unchecked(indicies_array[i] as usize);
             }
@@ -259,27 +261,27 @@ where
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + NumCast + Debug, const N: usize> SimdArray<SC, T, N>
+impl<T: SimdInfo + NumCast + Debug, const N: usize> SimdArray<T, N>
 where
-    ArchSimd<SC, T>:,
+    ArchSimd<T>:,
     T: Add<Output = T>,
     T: Mul<Output = T>,
-    ArchSimd<SC, T>: Add<Output = ArchSimd<SC, T>>,
-    ArchSimd<SC, T>: Mul<Output = ArchSimd<SC, T>>,
-    ArchSimd<SC, T>: AddAssign,
+    ArchSimd<T>: Add<Output = ArchSimd<T>>,
+    ArchSimd<T>: Mul<Output = ArchSimd<T>>,
+    ArchSimd<T>: AddAssign,
 {
     pub fn iota_custom(offset: T, increment: T) -> Self {
         let mut result = Self::new_uninit();
 
         let iota_array = std::array::from_fn(|i| NumCast::from(i).unwrap());
         let increment_vec = ArchSimd::splat(increment);
-        let lanes_increment_vec = ArchSimd::splat(increment *  NumCast::from(SC::LANES).unwrap());
+        let lanes_increment_vec = ArchSimd::splat(increment *  NumCast::from(T::LANES).unwrap());
         let iota_vec = ArchSimd::from_array(iota_array) * increment_vec;
         
         let mut cur_vec = ArchSimd::splat(offset) + iota_vec;
         
         result.store_simd(0, cur_vec);
-        for i in (SC::LANES..Self::TAIL_START).step_by(SC::LANES) {
+        for i in (T::LANES..Self::TAIL_START).step_by(T::LANES) {
             cur_vec += lanes_increment_vec;
             result.store_simd(i, cur_vec);
         }
@@ -296,13 +298,13 @@ where
         let mut result = Self::new_uninit();
 
         let iota_array = std::array::from_fn(|i| NumCast::from(i).unwrap());
-        let lanes_increment_vec = ArchSimd::splat(NumCast::from(SC::LANES).unwrap());
+        let lanes_increment_vec = ArchSimd::splat(NumCast::from(T::LANES).unwrap());
         let iota_vec = ArchSimd::from_array(iota_array);
         
         let mut cur_vec = ArchSimd::splat(offset) + iota_vec;
         
         result.store_simd(0, cur_vec);
-        for i in (SC::LANES..Self::TAIL_START).step_by(SC::LANES) {
+        for i in (T::LANES..Self::TAIL_START).step_by(T::LANES) {
             cur_vec += lanes_increment_vec;
             result.store_simd(i, cur_vec);
         }
@@ -316,17 +318,17 @@ where
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + Float, const N: usize> SimdArray<SC, T, N>
+impl<T: SimdInfo + Float, const N: usize> SimdArray<T, N>
 where
-    ArchSimd<SC, T>:,
-    ArchSimd<SC, T>: SimdFloat + StdFloat,
+    ArchSimd<T>:,
+    ArchSimd<T>: SimdFloat + StdFloat,
     T: Sub<Output = T>,
-    ArchSimd<SC, T>: Sub<Output = ArchSimd<SC, T>>,
-    ArchSimd<SC, T>: Add<Output = ArchSimd<SC, T>>,
+    ArchSimd<T>: Sub<Output = ArchSimd<T>>,
+    ArchSimd<T>: Add<Output = ArchSimd<T>>,
 {
     pub fn fract(&self) -> Self {
         let mut result = Self::new_uninit();
-        for i in (0..Self::TAIL_START).step_by(SC::LANES) {
+        for i in (0..Self::TAIL_START).step_by(T::LANES) {
             let data = self.load_simd(i);
             let new_data = data - data.floor();
             result.store_simd(i, new_data);
@@ -342,14 +344,14 @@ where
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + Float, const N: usize> SimdArray<SC, T, N>
+impl<T: SimdInfo + Float, const N: usize> SimdArray<T, N>
 where
-    ArchSimd<SC, T>:,
-    ArchSimd<SC, T>: SimdFloat + StdFloat,
+    ArchSimd<T>:,
+    ArchSimd<T>: SimdFloat + StdFloat,
 {
     pub fn mul_add(self, mult: Self, offset: Self) -> Self {
         let mut result = Self::new_uninit();
-        for i in (0..Self::TAIL_START).step_by(SC::LANES) {
+        for i in (0..Self::TAIL_START).step_by(T::LANES) {
             let data_vec = self.load_simd(i);
             let mult_vec = mult.load_simd(i);
             let offset_vec = offset.load_simd(i);
@@ -371,11 +373,11 @@ where
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + Float, const N: usize> SimdArray<SC, T, N>
+impl<T: SimdInfo + Float, const N: usize> SimdArray<T, N>
 where
-    ArchSimd<SC, T>:,
-    ArchSimd<SC, T>: SimdFloat + StdFloat,
-    ArchSimd<SC, T>: Neg<Output = ArchSimd<SC, T>>,
+    ArchSimd<T>:,
+    ArchSimd<T>: SimdFloat + StdFloat,
+    ArchSimd<T>: Neg<Output = ArchSimd<T>>,
 {
     // No actual mul_sub in std::simd, but the compiler will make it for us.
     pub fn mul_sub(self, mult: Self, offset: Self) -> Self {
@@ -383,16 +385,16 @@ where
     }
 }
 
-impl<SC: const SimdConstants, T: const SimdInfo<SC> + NumCast, const N: usize> SimdArray<SC, T, N>
+impl<T: SimdInfo + NumCast, const N: usize> SimdArray<T, N>
 where
-    ArchSimd<SC, T>:,
+    ArchSimd<T>:,
     T: Mul<Output = T>,
     T: Add<Output = T>,
     T: Sub<Output = T>,
-    ArchSimd<SC, T>: Mul<Output = ArchSimd<SC, T>>,
-    ArchSimd<SC, T>: Add<Output = ArchSimd<SC, T>>,
-    ArchSimd<SC, T>: Sub<Output = ArchSimd<SC, T>>,
-    ArchSimd<SC, T>: SimdFloat + StdFloat,
+    ArchSimd<T>: Mul<Output = ArchSimd<T>>,
+    ArchSimd<T>: Add<Output = ArchSimd<T>>,
+    ArchSimd<T>: Sub<Output = ArchSimd<T>>,
+    ArchSimd<T>: SimdFloat + StdFloat,
 {
     pub fn quintic_lerp(&self) -> Self {
         let mut result = Self::new_uninit();
@@ -401,7 +403,7 @@ where
         let ten = ArchSimd::splat(NumCast::from(10.0).unwrap());
         let neg_fifteen = ArchSimd::splat(NumCast::from(-15.0).unwrap());
         
-        for i in (0..Self::TAIL_START).step_by(SC::LANES) {
+        for i in (0..Self::TAIL_START).step_by(T::LANES) {
             let t = self.load_simd(i);
             let new_data = t * t * t * t.mul_add(t.mul_add(six, neg_fifteen), ten);
             result.store_simd(i, new_data);
