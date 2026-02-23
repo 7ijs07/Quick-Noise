@@ -38,6 +38,8 @@ impl Perlin {
         }
         let weight_coef = 1.0 / weight_sum;
 
+        let lacunarity_inv = 1.0 / lacunarity;
+
         let mut cur_octave = Octave2D::splat(scale, 1.0);
 
         // Add each noise pass to result. Slight performance boost for initializing on the first pass.
@@ -50,7 +52,7 @@ impl Perlin {
             octave_offset,
         );
         for _ in 1..octaves {
-            cur_octave.scale /= lacunarity;
+            cur_octave.scale *= lacunarity_inv;
             cur_octave.weight *= persistence;
 
             self.uniform_grid_octave_2d::<false>(
@@ -132,6 +134,8 @@ impl Perlin {
         }
         let weight_coef = 1.0 / weight_sum;
 
+        let lacunarity_inv = 1.0 / lacunarity;
+
         let mut cur_octave = Octave3D::splat(scale, 1.0);
 
         // Add each noise pass to result. Slight performance boost for initializing on the first pass.
@@ -144,7 +148,7 @@ impl Perlin {
             octave_offset,
         );
         for _ in 1..octaves {
-            cur_octave.scale /= lacunarity;
+            cur_octave.scale *= lacunarity_inv;
             cur_octave.weight *= persistence;
 
             self.uniform_grid_octave_3d::<false>(
