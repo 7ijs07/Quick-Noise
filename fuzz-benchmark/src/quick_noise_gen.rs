@@ -37,6 +37,7 @@ impl NoiseGenerator for Perlin {
             0,
             0f32,
         );
-        return 1024;
+
+        return 1024 * config.octaves.get() as usize;
     }
 }

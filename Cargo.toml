@@ -21,6 +21,7 @@ cfg-if.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
+fastnoise2.workspace = true
 
 [workspace.dependencies]
 quick-noise.path = "."
@@ -28,6 +29,8 @@ num-traits = "0.2.19"
 image = { version = "0.25.9", default-features = false, features = ["png"] }
 cfg-if = "1.0.4"
 criterion = "0.8.2"
+fastnoise2 = "0.4.0"
+rand = "0.10.0"
 
 [[bench]]
 name = "perlin"

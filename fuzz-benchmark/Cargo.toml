@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-fastnoise2 = "0.4.0"
+fastnoise2.workspace = true
 quick-noise.workspace = true
-rand = "0.10.0"
+rand.workspace = true
 
 [profile.release]
 debug = "line-tables-only"

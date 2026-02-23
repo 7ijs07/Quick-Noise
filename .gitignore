@@ -27,3 +27,4 @@ target
 /.vscode
 
 Cargo.lock
+noise_images/

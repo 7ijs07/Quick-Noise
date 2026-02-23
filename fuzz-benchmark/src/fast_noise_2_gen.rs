@@ -44,6 +44,6 @@ impl NoiseGenerator for PerlinFastNoise2 {
             }
         }
 
-        return 1024;
+        return 1024 * config.octaves.get() as usize;
     }
 }

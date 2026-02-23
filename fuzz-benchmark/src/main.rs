@@ -73,17 +73,20 @@ fn test_2d<T: NoiseGenerator>(
     let mut config_rng = Lcg64::from_seed(config_seed.to_ne_bytes());
 
     let mut samples = 0usize;
-    let start = Instant::now();
+    let mut elapsed = Duration::ZERO;
 
-    while start.elapsed() < TEST_TIME {
+    while elapsed < TEST_TIME {
         let config = NoiseConfig::random(&mut config_rng, single_octave);
-
-        samples += generator.generate_2d(&mut output, &config);
-
-        black_box(&output);
+        
+        let start = Instant::now();
+        for _ in 0..20 {
+            samples += generator.generate_2d(&mut output, &config);
+            black_box(&output);
+        }
+        elapsed += start.elapsed();
     }
 
-    return (start.elapsed(), samples);
+    return (elapsed, samples);
 }
 
 fn test_2d_thread<T: NoiseGenerator>(config_seed: u64, noise_seed: u64, single_octave: bool) -> JoinHandle<(Duration, usize, f64)> {
