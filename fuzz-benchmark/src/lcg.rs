@@ -13,9 +13,7 @@ impl Lcg64 {
 
     #[inline]
     fn next_state(&mut self) {
-        self.state = self.state
-            .wrapping_mul(Self::A)
-            .wrapping_add(Self::C);
+        self.state = self.state.wrapping_mul(Self::A).wrapping_add(Self::C);
     }
 }
 
@@ -54,11 +52,11 @@ impl SeedableRng for Lcg64 {
     type Seed = [u8; 8];
 
     fn from_seed(seed: Self::Seed) -> Self {
-        let state = u64::from_le_bytes(seed);
-        Self { state }
+        let state = u64::from_ne_bytes(seed);
+        return Self { state };
     }
 
     fn seed_from_u64(seed: u64) -> Self {
-        Self { state: seed }
+        return Self { state: seed };
     }
 }

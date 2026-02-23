@@ -1,6 +1,6 @@
 use quick_noise::{
+    math::vec::Vec2,
     perlin::{Perlin, PerlinMap, PerlinVol},
-    math::vec::Vec2
 };
 
 use crate::NoiseGenerator;
@@ -16,14 +16,17 @@ impl NoiseGenerator for Perlin {
     fn generate_2d(&mut self, output: &mut Self::Output2D, config: &crate::NoiseConfig) -> usize {
         self.uniform_grid_2d(
             output,
-            Vec2 { x: config.pos.0, y: config.pos.1 },
+            Vec2 {
+                x: config.pos.0,
+                y: config.pos.1,
+            },
             config.octaves.get(),
             config.scale,
             1f32,
             config.lacunarity,
             1f32,
             0,
-            0f32
+            0f32,
         );
         return 1024;
     }
