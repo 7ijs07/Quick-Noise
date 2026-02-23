@@ -23,7 +23,7 @@ Uniform grid computes larger scales faster (up until 32.0), and computes them sl
 for scales that are not a power of two. Scale can be any 32-bit floating point number >= 2.0.
 
 The following results were benched on an Intel I7-13700H CPU equipped with AVX2 on an XPS 15 9530 laptop on Linux.
-Results are measured in billions of points per second for a single noise pass.
+Results are measured in billions of points per second single-threaded for one noise pass.
 
 | Scale | 2D Perlin | 3D Perlin |
 |-------|-----------|-----------|
