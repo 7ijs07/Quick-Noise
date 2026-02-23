@@ -6,7 +6,7 @@ use std::{
 };
 
 use quick_noise::perlin::Perlin;
-use rand::{RngExt, SeedableRng};
+use rand::{Rng, RngExt, SeedableRng};
 
 use crate::{fast_noise_2_gen::PerlinFastNoise2, lcg::Lcg64};
 
@@ -108,10 +108,14 @@ fn print_results_2d((duration, samples, sps_billion): (Duration, usize, f64), si
 }
 
 fn main() {
-    let handle_qn_single = test_2d_thread::<Perlin>(0, 0, true);
-    let handle_qn_multi = test_2d_thread::<Perlin>(0, 0, false);
-    let handle_fn2_single = test_2d_thread::<PerlinFastNoise2>(0, 0, true);
-    let handle_fn2_multi = test_2d_thread::<PerlinFastNoise2>(0, 0, false);
+    let mut rng = rand::rng();
+    let config_seed = rng.next_u64();
+    let noise_seed = rng.next_u64();
+
+    let handle_qn_single = test_2d_thread::<Perlin>(config_seed, noise_seed, true);
+    let handle_qn_multi = test_2d_thread::<Perlin>(config_seed, noise_seed, false);
+    let handle_fn2_single = test_2d_thread::<PerlinFastNoise2>(config_seed, noise_seed, true);
+    let handle_fn2_multi = test_2d_thread::<PerlinFastNoise2>(config_seed, noise_seed, false);
 
     print_results_2d(handle_qn_single.join().unwrap(), true, "Quick Noise");
     print_results_2d(handle_qn_multi.join().unwrap(), false, "Quick Noise");

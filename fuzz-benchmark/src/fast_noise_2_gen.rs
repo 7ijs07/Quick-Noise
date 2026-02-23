@@ -12,10 +12,12 @@ impl NoiseGenerator for PerlinFastNoise2 {
 
     type Output3D = [f32; 32768];
 
+    #[inline(always)]
     fn create_output_2d() -> Self::Output2D {
         return [0f32; 1024];
     }
 
+    #[inline(always)]
     fn new_with_seed(seed: u64) -> Self {
         return PerlinFastNoise2 {
             seed,
@@ -23,6 +25,7 @@ impl NoiseGenerator for PerlinFastNoise2 {
         };
     }
 
+    #[inline(always)]
     fn generate_2d(&mut self, output: &mut Self::Output2D, config: &crate::NoiseConfig) -> usize {
         for i in 0..config.octaves.get() {
             let scale = config.scale / (i as f32 * config.lacunarity);
