@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+fastnoise2 = "0.4.0"
 quick-noise.workspace = true
 rand = "0.10.0"
 

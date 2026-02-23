@@ -1,15 +1,16 @@
 use std::{
     hint::black_box,
     num::{NonZero, NonZeroU32},
-    thread,
+    thread::{self, JoinHandle},
     time::{Duration, Instant},
 };
 
 use quick_noise::perlin::Perlin;
 use rand::{RngExt, SeedableRng};
 
-use crate::lcg::Lcg64;
+use crate::{fast_noise_2_gen::PerlinFastNoise2, lcg::Lcg64};
 
+mod fast_noise_2_gen;
 mod lcg;
 mod quick_noise_gen;
 
@@ -23,6 +24,7 @@ struct NoiseConfig {
 }
 
 impl NoiseConfig {
+    #[inline(always)]
     pub fn random(rng: &mut Lcg64, single_octave: bool) -> Self {
         let pos = (
             rng.random_range(-10_000..10_000),
@@ -49,8 +51,10 @@ impl NoiseConfig {
 }
 
 trait NoiseGenerator {
-    type Output2D: Default;
-    type Output3D: Default;
+    type Output2D;
+    type Output3D;
+
+    fn create_output_2d() -> Self::Output2D;
 
     fn new_with_seed(seed: u64) -> Self;
 
@@ -65,7 +69,7 @@ fn test_2d<T: NoiseGenerator>(
     single_octave: bool,
 ) -> (Duration, usize) {
     let mut generator = T::new_with_seed(noise_seed);
-    let mut output = T::Output2D::default();
+    let mut output = T::create_output_2d();
     let mut config_rng = Lcg64::from_seed(config_seed.to_ne_bytes());
 
     let mut samples = 0usize;
@@ -82,28 +86,35 @@ fn test_2d<T: NoiseGenerator>(
     return (start.elapsed(), samples);
 }
 
+fn test_2d_thread<T: NoiseGenerator>(config_seed: u64, noise_seed: u64, single_octave: bool) -> JoinHandle<(Duration, usize, f64)> {
+    return thread::spawn(move || {
+        let (duration, samples) = test_2d::<T>(config_seed, noise_seed, single_octave);
+        let sps_billion = samples as f64 / duration.as_secs_f64() / 1e9;
+        (duration, samples, sps_billion)
+    });
+}
+
+fn print_results_2d((duration, samples, sps_billion): (Duration, usize, f64), single_octave: bool, name: &str) {
+    let octave = if single_octave {
+        "Single-octave"
+    } else {
+        "Multi-octave"
+    };
+    
+    println!(
+        "{} {} generated {} samples in {:.0?}, {:.3} billion samples per second",
+        octave, name, samples, duration, sps_billion
+    );
+}
+
 fn main() {
-    let multi_handle = thread::spawn(|| {
-        let (duration, samples) = test_2d::<Perlin>(0, 0, false);
-        let sps_billion = (samples as f64 / duration.as_secs_f64() / 1e9);
-        (duration, samples, sps_billion)
-    });
+    let handle_qn_single = test_2d_thread::<Perlin>(0, 0, true);
+    let handle_qn_multi = test_2d_thread::<Perlin>(0, 0, false);
+    let handle_fn2_single = test_2d_thread::<PerlinFastNoise2>(0, 0, true);
+    let handle_fn2_multi = test_2d_thread::<PerlinFastNoise2>(0, 0, false);
 
-    let single_handle = thread::spawn(|| {
-        let (duration, samples) = test_2d::<Perlin>(0, 0, true);
-        let sps_billion = (samples as f64 / duration.as_secs_f64() / 1e9);
-        (duration, samples, sps_billion)
-    });
-
-    let (multi_duration, multi_samples, multi_sps) = multi_handle.join().unwrap();
-    let (single_duration, single_samples, single_sps) = single_handle.join().unwrap();
-
-    println!(
-        "Multi-octave generated {} samples in {:.0?}, {:.3} billion samples per second",
-        multi_samples, multi_duration, multi_sps
-    );
-    println!(
-        "Single-octave generated {} samples in {:.0?}, {:.3} billion samples per second",
-        single_samples, single_duration, single_sps
-    );
+    print_results_2d(handle_qn_single.join().unwrap(), true, "Quick Noise");
+    print_results_2d(handle_qn_multi.join().unwrap(), false, "Quick Noise");
+    print_results_2d(handle_fn2_single.join().unwrap(), true, "Fast Noise 2");
+    print_results_2d(handle_fn2_multi.join().unwrap(), false, "Fast Noise 2");
 }
