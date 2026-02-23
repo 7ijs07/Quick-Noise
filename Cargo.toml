@@ -1,3 +1,7 @@
+[workspace]
+resolver = "3"
+members = [".", "fuzz-benchmark"]
+
 [package]
 name = "quick-noise"
 version = "0.1.0"
@@ -5,17 +9,25 @@ edition = "2024"
 
 [profile.release]
 opt-level = 3
+debug = "line-tables-only"
 
 [profile.bench]
 opt-level = 3
 
 [dependencies]
+num-traits.workspace = true
+image.workspace = true
+cfg-if.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[workspace.dependencies]
+quick-noise.path = "."
 num-traits = "0.2.19"
 image = { version = "0.25.9", default-features = false, features = ["png"] }
 cfg-if = "1.0.4"
-
-[dev-dependencies]
-criterion = { version = "0.8.2" }
+criterion = "0.8.2"
 
 [[bench]]
 name = "perlin"

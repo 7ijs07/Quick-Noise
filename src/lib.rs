@@ -1,12 +1,12 @@
 #![feature(const_cmp, const_trait_impl, generic_const_exprs)]
 #![feature(portable_simd)]
 
-mod simd {
+pub mod simd {
     pub mod arch_simd;
     pub mod simd_array;
 }
 
-mod math {
+pub mod math {
     pub mod random;
     pub mod vec;
 }

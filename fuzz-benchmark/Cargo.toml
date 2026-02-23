@@ -1,0 +1,11 @@
+[package]
+name = "fuzz-benchmark"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+quick-noise.workspace = true
+rand = "0.10.0"
+
+[profile.release]
+debug = "line-tables-only"
