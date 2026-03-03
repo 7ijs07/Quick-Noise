@@ -36,6 +36,17 @@ Results are measured in billions of points per second single-threaded for one no
 | 8     | 5.34 B/s       | 7.82 B/s       | 8.74 B/s         | 20.9 B/s         |
 | 4     | 2.50 B/s       | 2.69 B/s       | 4.73 B/s         | 5.42 B/s         |
 
+
+## Batched
+
+Batched noise processing is much more flexible than uniform grid, allowing for any arbitrary input and enabling
+techniques such as domain warping. Results are measured in millions of points per second.
+
+|   Library   | 2D Perlin AVX2 |
+|-------------|----------------|
+| Quick-Noise | 977 M/s        | 
+| Fast-Noise2 | 508 M/s        |
+
 # Running
 
 Height maps can be generated in `examples/basic.rs`. To run these examples, use:
