@@ -1,0 +1,255 @@
+use std::fmt::Debug;
+use num_traits::{NumCast, NumOps};
+use std::ops::*;
+
+mod private {
+    pub trait SealedTypes {}
+    impl SealedTypes for f64 {}
+    impl SealedTypes for f32 {}
+    impl SealedTypes for i64 {}
+    impl SealedTypes for i32 {}
+    impl SealedTypes for i16 {}
+    impl SealedTypes for i8 {}
+    impl SealedTypes for u64 {}
+    impl SealedTypes for u32 {}
+    impl SealedTypes for u16 {}
+    impl SealedTypes for u8 {}
+
+    pub trait SealedSizes {}
+    impl SealedSizes for super::B64 {}
+    impl SealedSizes for super::B32 {}
+    impl SealedSizes for super::B16 {}
+    impl SealedSizes for super::B8 {}
+}
+
+
+pub enum BitSize {
+    Size64,
+    Size32,
+    Size16,
+    Size8,
+}
+
+pub enum PrimitiveType {
+    Float,
+    SignedInt,
+    UnsignedInt,
+}
+
+pub enum SimdType {
+    F64,
+    F32,
+    I64,
+    I32,
+    I16,
+    I8,
+    U64,
+    U32,
+    U16,
+    U8,
+}
+
+pub struct B64;
+pub struct B32;
+pub struct B16;
+pub struct B8;
+
+pub trait BitWidth: private::SealedSizes {
+    const BIT_SIZE: usize;
+}
+
+impl BitWidth for B64 { const BIT_SIZE: usize = 64; }
+impl BitWidth for B32 { const BIT_SIZE: usize = 32; }
+impl BitWidth for B16 { const BIT_SIZE: usize = 16; }
+impl BitWidth for B8 { const BIT_SIZE: usize = 8; }
+
+// Need both enum and associated type for matching and bounds.
+pub trait SimdElement: 
+    private::SealedTypes +
+    Sized +
+    Default +
+    Copy +
+    NumCast +
+    NumOps +
+    Debug +
+{
+    const BIT_SIZE: BitSize;
+    const PRIMITIVE_TYPE: PrimitiveType;
+    const TYPE: SimdType;
+    type BitWidthType: BitWidth;
+}
+
+impl SimdElement for f64 {
+    const BIT_SIZE: BitSize = BitSize::Size64;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::Float;
+    const TYPE: SimdType = SimdType::F64;
+    type BitWidthType = B64;
+}
+impl SimdElement for f32 {
+    const BIT_SIZE: BitSize = BitSize::Size32;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::Float;
+    const TYPE: SimdType = SimdType::F32;
+    type BitWidthType = B32;
+}
+impl SimdElement for i64 {
+    const BIT_SIZE: BitSize = BitSize::Size64;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::SignedInt;
+    const TYPE: SimdType = SimdType::I64;
+    type BitWidthType = B64;
+}
+impl SimdElement for i32 {
+    const BIT_SIZE: BitSize = BitSize::Size32;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::SignedInt;
+    const TYPE: SimdType = SimdType::I32;
+    type BitWidthType = B32;
+}
+impl SimdElement for i16 {
+    const BIT_SIZE: BitSize = BitSize::Size16;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::SignedInt;
+    const TYPE: SimdType = SimdType::I16;
+    type BitWidthType = B16;
+}
+impl SimdElement for i8 {
+    const BIT_SIZE: BitSize = BitSize::Size8;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::SignedInt;
+    const TYPE: SimdType = SimdType::I8;
+    type BitWidthType = B8;
+}
+impl SimdElement for u64 {
+    const BIT_SIZE: BitSize = BitSize::Size64;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::UnsignedInt;
+    const TYPE: SimdType = SimdType::U64;
+    type BitWidthType = B64;
+}
+impl SimdElement for u32 {
+    const BIT_SIZE: BitSize = BitSize::Size32;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::UnsignedInt;
+    const TYPE: SimdType = SimdType::U32;
+    type BitWidthType = B32;
+}
+impl SimdElement for u16 {
+    const BIT_SIZE: BitSize = BitSize::Size16;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::UnsignedInt;
+    const TYPE: SimdType = SimdType::U16;
+    type BitWidthType = B16;
+}
+impl SimdElement for u8 {
+    const BIT_SIZE: BitSize = BitSize::Size8;
+    const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::UnsignedInt;
+    const TYPE: SimdType = SimdType::U8;
+    type BitWidthType = B8;
+}
+
+// pub trait BitSize: private::Sealed + Sized {
+//     const BITS: usize;
+//     type BitSize;
+// }
+
+// impl BitSize for f64 { const BITS: usize = 64; type BitSize = BitSize64; }
+// impl BitSize for f32 { const BITS: usize = 32; type BitSize = BitSize32; }
+// impl BitSize for i64 { const BITS: usize = 64; type BitSize = BitSize64; }
+// impl BitSize for i32 { const BITS: usize = 32; type BitSize = BitSize32; }
+// impl BitSize for i16 { const BITS: usize = 16; type BitSize = BitSize16; }
+// impl BitSize for i8 { const BITS: usize = 8; type BitSize = BitSize8; }
+// impl BitSize for u64 { const BITS: usize = 64; type BitSize = BitSize64; }
+// impl BitSize for u32 { const BITS: usize = 32; type BitSize = BitSize32; }
+// impl BitSize for u16 { const BITS: usize = 16; type BitSize = BitSize16; }
+// impl BitSize for u8 { const BITS: usize = 8; type BitSize = BitSize8; }
+
+pub struct Signed;
+pub struct Unsigned;
+
+pub trait SimdInteger: SimdElement {
+    type Type;
+}
+
+impl SimdInteger for i64 { type Type = Signed; }
+impl SimdInteger for i32 { type Type = Signed; }
+impl SimdInteger for i16 { type Type = Signed; }
+impl SimdInteger for i8 { type Type = Signed; }
+impl SimdInteger for u64 { type Type = Unsigned; }
+impl SimdInteger for u32 { type Type = Unsigned; }
+impl SimdInteger for u16 { type Type = Unsigned; }
+impl SimdInteger for u8 { type Type = Unsigned; }
+
+pub trait SimdFloat: SimdElement + HasSigned + HasUnsigned + SimdMulType{}
+
+impl SimdFloat for f64 {}
+impl SimdFloat for f32 {}
+
+pub trait SimdWideType: SimdElement {}
+impl SimdWideType for f64 {}
+impl SimdWideType for f32 {}
+impl SimdWideType for i64 {}
+impl SimdWideType for i32 {}
+impl SimdWideType for u64 {}
+impl SimdWideType for u32 {}
+
+pub trait SimdIntegerNotByte: SimdElement {}
+impl SimdIntegerNotByte for i64 {}
+impl SimdIntegerNotByte for i32 {}
+impl SimdIntegerNotByte for u64 {}
+impl SimdIntegerNotByte for u32 {}
+impl SimdIntegerNotByte for i16 {}
+impl SimdIntegerNotByte for u16 {}
+
+pub trait SimdMulType: SimdElement {}
+impl SimdMulType for f64 {}
+impl SimdMulType for f32 {}
+impl SimdMulType for i32 {}
+impl SimdMulType for i16 {}
+impl SimdMulType for u32 {}
+impl SimdMulType for u16 {}
+
+// pub trait BitSize64: Sized + private::Sealed {}
+// impl BitSize64 for f64 {}
+// impl BitSize64 for i64 {}
+// impl BitSize64 for u64 {}
+
+// pub trait BitSize32: Sized + private::Sealed {}
+// impl BitSize32 for f32 {}
+// impl BitSize32 for i32 {}
+// impl BitSize32 for u32 {}
+
+// pub trait BitSize16: Sized + private::Sealed {}
+// impl BitSize16 for i16 {}
+// impl BitSize16 for u16 {}
+
+// pub trait BitSize8: Sized + private::Sealed {}
+// impl BitSize8 for i8 {}
+// impl BitSize8 for u8 {}
+
+
+pub trait HasFloat: SimdElement {
+    type Float: SimdElement;
+}
+
+pub trait HasSigned: SimdElement {
+    type Signed: SimdElement;
+}
+
+pub trait HasUnsigned: SimdElement {
+    type Unsigned: SimdElement;
+}
+
+// Floats.
+impl HasSigned for f64 { type Signed = i64; }
+impl HasUnsigned for f64 { type Unsigned = u64; }
+impl HasSigned for f32 { type Signed = i32; }
+impl HasUnsigned for f32 { type Unsigned = u32; }
+
+// Signed Integers.
+impl HasFloat for i64 { type Float = f64; }
+impl HasUnsigned for i64 { type Unsigned = u64; }
+impl HasFloat for i32 { type Float = f32; }
+impl HasUnsigned for i32 { type Unsigned = u32; }
+impl HasUnsigned for i16 { type Unsigned = u16; }
+impl HasUnsigned for i8 { type Unsigned = u8; }
+
+// Unsigned Integers.
+impl HasFloat for u64 { type Float = f64; }
+impl HasSigned for u64 { type Signed = i64; }
+impl HasFloat for u32 { type Float = f32; }
+impl HasSigned for u32 { type Signed = i32; }
+impl HasSigned for u16 { type Signed = i16; }
+impl HasSigned for u8 { type Signed = i8; }

@@ -1,5 +1,8 @@
+// use criterion::profiler;
 use quick_noise::emit::grayscale;
-use quick_noise::perlin::Perlin;
+// use quick_noise::perlin::Perlin;
+use quick_noise::testing::profiler as unofficial_profiler;
+// use quick_noise::simd::simd_vec::core::SimdVec;
 
 // DISCLAIMER: Rust nightly is *needed* to run the code.
 fn main() {
@@ -16,44 +19,55 @@ fn main() {
     //     each successive octave is half as noticeable as the previous one.
     // - Channel allows for differing results for the same seed and octave scale. Acts as a second seed.
 
-    grayscale::write_perlin_height_map("noise_images/single_pass.png", 32, 1, 64.0, 2.0, 0.5);
-    grayscale::write_perlin_height_map("noise_images/glossy.png", 32, 11, 256.0, 1.5, 0.7);
-    grayscale::write_perlin_height_map("noise_images/chiseled.png", 32, 6, 256.0, 2.0, 0.8);
-    grayscale::write_perlin_height_map("noise_images/smooth.png", 32, 20, 512.0, 1.2, 0.9);
-    grayscale::write_perlin_height_map("noise_images/sharp.png", 32, 6, 64.0, 2.0, 0.9);
+    // search_magic();
+
+    // let int_vec = SimdVec::<i32>::iota(8);
+    // let uint_vec = SimdVec::<u32>::splat(2);
+    // println!("Before: {:?}", int_vec);
+    // let new_vec = int_vec.runtime_permute(uint_vec);
+    // println!("After: {:?}", new_vec);
+
+    unofficial_profiler::profile_perlin_2d_batched_call(1, 32.0, 2.0, 0.5);
+    grayscale::write_perlin_height_map_batched("noise_images/batched_pass.png", 32, 1, 1.0/32.0, 2.0, 0.5);
+
+    // grayscale::write_perlin_height_map("noise_images/single_pass.png", 32, 1, 32.0, 2.0, 0.5);
+    // grayscale::write_perlin_height_map("noise_images/glossy.png", 32, 11, 256.0, 1.5, 0.7);
+    // grayscale::write_perlin_height_map("noise_images/chiseled.png", 32, 6, 256.0, 2.0, 0.8);
+    // grayscale::write_perlin_height_map("noise_images/smooth.png", 32, 20, 512.0, 1.2, 0.9);
+    // grayscale::write_perlin_height_map("noise_images/sharp.png", 32, 6, 64.0, 2.0, 0.9);
 
     // For more control, determine the scale and weight of each octave:
-    grayscale::write_perlin_octaves_height_map(
-        "noise_images/custom.png",
-        32,
-        [
-            (300.0, 8.0),
-            (250.0, 7.0),
-            (200.0, 4.0),
-            (100.0, 3.0),
-            (50.0, 1.0),
-            (25.0, 2.0),
-            (12.5, 1.0),
-        ],
-        1,
-    );
+    // grayscale::write_perlin_octaves_height_map(
+    //     "noise_images/custom.png",
+    //     32,
+    //     [
+    //         (300.0, 8.0),
+    //         (250.0, 7.0),
+    //         (200.0, 4.0),
+    //         (100.0, 3.0),
+    //         (50.0, 1.0),
+    //         (25.0, 2.0),
+    //         (12.5, 1.0),
+    //     ],
+    //     1,
+    // );
 
     // Each axis can be scaled independently of eachother as well, like so:
-    grayscale::write_perlin_octaves_height_map(
-        "noise_images/denim.png",
-        32,
-        [
-            ((64.0, 512.0), 8.0),
-            ((512.0, 64.0), 8.0),
-            ((32.0, 256.0), 4.0),
-            ((256.0, 32.0), 4.0),
-            ((16.0, 128.0), 2.0),
-            ((128.0, 16.0), 2.0),
-            ((8.0, 64.0), 1.0),
-            ((64.0, 8.0), 1.0),
-        ],
-        1,
-    );
+    // grayscale::write_perlin_octaves_height_map(
+    //     "noise_images/denim.png",
+    //     32,
+    //     [
+    //         ((64.0, 512.0), 8.0),
+    //         ((512.0, 64.0), 8.0),
+    //         ((32.0, 256.0), 4.0),
+    //         ((256.0, 32.0), 4.0),
+    //         ((16.0, 128.0), 2.0),
+    //         ((128.0, 16.0), 2.0),
+    //         ((8.0, 64.0), 1.0),
+    //         ((64.0, 8.0), 1.0),
+    //     ],
+    //     1,
+    // );
 
-    grayscale::write_perlin_height_map_3d("noise_images/single_pass_3d.png", 32, 1, 32.0, 2.0, 0.5);
+    // grayscale::write_perlin_height_map_3d("noise_images/single_pass_3d.png", 32, 1, 32.0, 2.0, 0.5);
 }

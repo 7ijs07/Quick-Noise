@@ -2,6 +2,10 @@
 
 use crate::simd::arch_simd::ArchSimd;
 use std::simd::num::SimdInt;
+use std::simd::StdFloat;
+use crate::simd::simd_vec::core::SimdVec;
+use crate::simd::architectures::families::Avx2Family;
+use crate::simd::simd_traits::*;
 
 pub struct Random {
     core_seed: u64,
@@ -35,8 +39,12 @@ impl Random {
 
     pub fn mix_i32_simd_pair(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>) -> ArchSimd<u32> {
         let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
-
         Self::mix_u32_pair_simd_impl(data1.cast() ^ seed_vec, data2.cast())
+    }
+
+    pub fn mix_i32_simd_pair_fast(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>) -> ArchSimd<u32> {
+        let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
+        Self::mix_u32_pair_simd_fast_impl(data1.cast(), data2.cast(), seed_vec)
     }
 
     pub fn mix_i32_simd_triple(
@@ -114,10 +122,136 @@ impl Random {
         data1 ^= data1 >> 16;
         data1 *= ArchSimd::splat(0x85ebca6b) ^ data2;
         data1 ^= data1 >> 13;
-        data1 *= ArchSimd::splat(0xc2b2ae35) ^ data2;
+        data1 *= ArchSimd::splat(0xc2b2ae35);
         data1 ^= data1 >> 16;
         data1
     }
+
+    fn mix_u32_pair_simd_fast_impl(mut data1: ArchSimd<u32>, data2: ArchSimd<u32>, seed: ArchSimd<u32>) -> ArchSimd<u32> {
+        data1 ^= data1 >> 16;
+        data1 *= ArchSimd::splat(0x85ebca6b) ^ data2;
+        data1 ^= data1 >> 16;
+        data1
+    }
+
+    // pub fn mix_u32_four_group(
+    //     &self, mut x1: ArchSimd<u32>, mut y1: ArchSimd<u32>) -> (ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>) {
+    //     // let core_seed = ArchSimd::splat(self.core_seed as u32);
+    //     let channel_seed = ArchSimd::splat(self.channel_seed as u32);
+    //     let prime = ArchSimd::splat(0x85ebca6b);
+
+    //     x1 *= channel_seed;
+    //     let mut x2 = x1 + channel_seed;
+    //     y1 *= channel_seed;
+    //     let mut y2 = y1 + channel_seed;
+
+    //     x1 ^= (x1 ^ prime) >> 16;
+    //     x2 ^= (x2 ^ prime) >> 16;
+    //     y1 ^= (y1 ^ prime) >> 16;
+    //     y2 ^= (y2 ^ prime) >> 16;
+
+    //     let tl = x1 * y1;
+    //     let tr = x1 * y2;
+    //     let bl = x2 * y1;
+    //     let br = x2 * y2;
+
+
+    //     (tl, tr, bl, br)
+    // }
+
+    pub fn mix_u32_four_group(
+        &self, mut x1: SimdVec<u32, Avx2Family>, mut y1: SimdVec<u32, Avx2Family>) 
+            -> (SimdVec<u32, Avx2Family>, SimdVec<u32, Avx2Family>, SimdVec<u32, Avx2Family>, SimdVec<u32, Avx2Family>) 
+        {
+
+        // const X_BYTE_SHUFFLE: [u8; 32] = [
+        //     3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+        //     3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+        // ];
+
+        // const Y_BYTE_SHUFFLE: [u8; 32] = [
+        //     0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2,
+        //     0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2,
+        // ];
+
+        // let x_shuffle_indices = SimdVec::<u8, Avx2Family>::load(&X_BYTE_SHUFFLE[..]);
+        // let y_shuffle_indices = SimdVec::<u8, Avx2Family>::load(&Y_BYTE_SHUFFLE[..]);
+
+        // let core_seed = SimdVec::splat(self.core_seed as i32);
+        let channel_seed = SimdVec::splat(self.channel_seed as u32);
+        let prime = SimdVec::splat(0x85ebca6b_u32 as u32);
+
+        // let x1_mix1 = x1 * channel_seed;
+        // let x2_mix1 = x2 * channel_seed;
+        // let y1_mix1 = y1 * channel_seed;
+        // let y2_mix1 = y2 * channel_seed;
+
+        // let x1_shuf = x1_mix1.raw_cast::<u8>().runtime_permute_bytes(x_shuffle_indices).raw_cast::<i32>() ^ prime;
+        // let y1_shuf = y1_mix1.raw_cast::<u8>().runtime_permute_bytes(y_shuffle_indices).raw_cast::<i32>() ^ prime;
+        // let x2_shuf = x2_mix1.raw_cast::<u8>().runtime_permute_bytes(x_shuffle_indices).raw_cast::<i32>() ^ prime;
+        // let y2_shuf = y2_mix1.raw_cast::<u8>().runtime_permute_bytes(y_shuffle_indices).raw_cast::<i32>() ^ prime;
+
+        x1 *= channel_seed;
+        let mut x2 = x1 + channel_seed;
+        y1 *= channel_seed;
+        let mut y2 = y1 + channel_seed;
+
+        x1 ^= (x1 ^ prime) >> 16;
+        x2 ^= (x2 ^ prime) >> 16;
+        y1 ^= (y1 ^ prime) >> 16;
+        y2 ^= (y2 ^ prime) >> 16;
+
+
+        // x1 = x1.
+
+        // let tl = x1_shuf * y1_shuf;
+        // let tr = x1_shuf * y2_shuf;
+        // let bl = x2_shuf * y1_shuf;
+        // let br = x2_shuf * y2_shuf;
+
+        // (tl, tr, bl, br)
+
+        (x1 * y1, x1 * y2, x2 * y1, x2 * y2)
+    }
+
+    // pub fn mix_u32_four_group(
+    //     &self,
+    //     x1: ArchSimd<u32>, x2: ArchSimd<u32>,
+    //     y1: ArchSimd<u32>, y2: ArchSimd<u32>,
+    // ) -> (ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>) {
+    //     let cs = ArchSimd::splat(self.core_seed as u32);
+    //     let ch = ArchSimd::splat(self.channel_seed as u32);
+    //     let prime = ArchSimd::splat(0x9e3779b9u32);
+    //     let x1s = x1 * cs;
+    //     let x2s = x2 * cs;
+    //     let y1s = y1 * ch;
+    //     let y2s = y2 * ch;
+    //     (
+    //         (x1s ^ y1s) * prime,
+    //         (x1s ^ y2s) * prime,
+    //         (x2s ^ y1s) * prime,
+    //         (x2s ^ y2s) * prime,
+    //     )
+    // }
+
+//     pub fn mix_f32_four_group(
+//         &self, x1: ArchSimd<f32>, x2: ArchSimd<f32>, y1: ArchSimd<f32>, y2: ArchSimd<f32>
+//     ) -> (ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>) {
+//         let core_seed: ArchSimd<f32> = unsafe { std::mem::transmute(ArchSimd::splat(self.core_seed)) };
+//         let channel_seed: ArchSimd<f32> = unsafe { std::mem::transmute(ArchSimd::splat(self.channel_seed)) };
+        
+//         let x1s = x1 * core_seed;
+//         let x2s = x2 * core_seed;
+//         let y1s = y1 * channel_seed;
+//         let y2s = y2 * channel_seed;
+        
+//         let tl: ArchSimd<u32> = unsafe { std::mem::transmute(x1s + y1s) };
+//         let tr: ArchSimd<u32> = unsafe { std::mem::transmute(x1s + y2s) };
+//         let bl: ArchSimd<u32> = unsafe { std::mem::transmute(x2s + y1s) };
+//         let br: ArchSimd<u32> = unsafe { std::mem::transmute(x2s + y2s) };
+        
+//         (tl, tr, bl, br)
+//     }
 
     fn mix_u32_triple_simd_impl(
         mut data1: ArchSimd<u32>,

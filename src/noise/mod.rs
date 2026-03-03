@@ -5,6 +5,7 @@ pub mod perlin {
     mod single_octave;
     mod set_gradients;
     mod interpolation;
+    mod batched;
 
     // Public exports.
     pub use core::Perlin;
