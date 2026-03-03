@@ -3,6 +3,9 @@ use std::ops::{Mul, Neg};
 use num_traits::{Float, NumCast};
 use std::f32::consts::SQRT_2;
 use std::arch::x86_64::*;
+use crate::simd::simd_vec::core::SimdVec;
+use crate::simd::simd_mask::core::SimdMask;
+use crate::simd::architectures::families::{SseFamily, Avx2Family, Avx512Family};
 
 // Static dispatch for identifying lane sizes and number of simd registers.
 
@@ -11,41 +14,50 @@ cfg_if::cfg_if! {
     if #[cfg(all(target_arch = "x86_64", target_feature = "avx512f"))] {
         pub const SIMD_WIDTH: usize = 64;
         pub const NUM_SIMD_REG: usize = 32;
+        pub type SelSimd<T> = SimdVec<T, Avx512Family>;
     } else if #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))] {
         pub const SIMD_WIDTH: usize = 32;
         pub const NUM_SIMD_REG: usize = 16;
+        pub type SelSimd<T> = SimdVec<T, Avx2Family>;
     } else if #[cfg(all(target_arch = "x86_64", target_feature = "sse2"))] {
         pub const SIMD_WIDTH: usize = 16;
         pub const NUM_SIMD_REG: usize = 16;
+        pub type SelSimd<T> = SimdVec<T, SseFamily>;
     }
 
     // aarch64
     else if #[cfg(all(target_arch = "aarch64", target_feature = "sve"))] {
         pub const SIMD_WIDTH: usize = 32;
         pub const NUM_SIMD_REG: usize = 32;
+        pub type SelSimd<T> = SimdVec<T, SseFamily>;
     } else if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
         pub const SIMD_WIDTH: usize = 16;
         pub const NUM_SIMD_REG: usize = 32;
+        pub type SelSimd<T> = SimdVec<T, SseFamily>;
     }
 
     // wasm
     else if #[cfg(all(any(target_arch = "wasm32", target_arch = "wasm64"), target_feature = "simd128"))] {
         pub const SIMD_WIDTH: usize = 16;
         pub const NUM_SIMD_REG: usize = 16;
+        pub type SelSimd<T> = SimdVec<T, SseFamily>;
     }
 
     // riscv
     else if #[cfg(all(any(target_arch = "riscv64", target_arch = "riscv32"), target_feature = "v"))] {
         pub const SIMD_WIDTH: usize = 32;
         pub const NUM_SIMD_REG: usize = 32;
+        pub type SelSimd<T> = SimdVec<T, SseFamily>;
     }
 
     // fallback
     else {
         pub const SIMD_WIDTH: usize = 4;
         pub const NUM_SIMD_REG: usize = 8;
+        pub type SelSimd<T> = SimdVec<T, SseFamily>;
     }
 }
+
 
 pub type ArchSimd<T: SimdInfo> = Simd<T, { T::LANES }>;
 

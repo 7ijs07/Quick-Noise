@@ -5,6 +5,7 @@ use crate::simd::simd_traits::*;
 use crate::simd::simd_mask::core::SimdMask;
 
 #[derive(Clone, Copy)]
+#[repr(transparent)]
 pub struct SimdVec<T: SimdElement, F: SimdFamily> {
     pub(crate) data: F::Vec,
     pub(crate) _marker: PhantomData<T>,

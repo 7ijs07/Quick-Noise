@@ -4,11 +4,10 @@ use crate::simd::architectures::arch_impl::*;
 use crate::simd::architectures::macros::*;
 
 #[derive(Copy, Clone)]
-
+#[repr(transparent)]
 pub struct Avx2(pub __m256i);
 impl SimdArch for Avx2 {}
 impl MaskArch for Avx2 {}
-
 
 impl SimdAddImpl for Avx2 {
     #[inline(always)] fn f64_add(self, rhs: Self) -> Self { self_from_op!(_mm256_add_pd, self, rhs) }
@@ -90,7 +89,6 @@ impl SimdIntCastsImpl for Avx2 {
 }
 
 impl SimdPermuteImpl for Avx2 {
-    // type BlockVec = Avx2;
     #[inline(always)] fn permute_32(self, rhs: Self) -> Self { self_from_op!(_mm256_permutevar8x32_epi32, self, rhs) }
     #[inline(always)] fn permute_8(self, rhs: Self) -> Self { self_from_op!(_mm256_shuffle_epi8, self, rhs) }
 }
@@ -147,8 +145,8 @@ impl SimdOrdImpl for Avx2 {
 
 // TODO: Make a custom trait for handling this transmutation into i*.
 impl SimdSplatImpl for Avx2 {
-    #[inline(always)] fn splat_64<T>(val: T) -> Self { self_from_op_copy!(_mm256_set1_epi64x, val) }
-    #[inline(always)] fn splat_32<T>(val: T) -> Self { self_from_op_copy!(_mm256_set1_epi32, val) }
-    #[inline(always)] fn splat_16<T>(val: T) -> Self { self_from_op_copy!(_mm256_set1_epi16, val) }
-    #[inline(always)] fn splat_8<T>(val: T) -> Self { self_from_op_copy!(_mm256_set1_epi8, val) }
+    #[inline(always)] fn splat_64<T>(val: T) -> Self { self_from_op!(_mm256_set1_epi64x, val) }
+    #[inline(always)] fn splat_32<T>(val: T) -> Self { self_from_op!(_mm256_set1_epi32, val) }
+    #[inline(always)] fn splat_16<T>(val: T) -> Self { self_from_op!(_mm256_set1_epi16, val) }
+    #[inline(always)] fn splat_8<T>(val: T) -> Self { self_from_op!(_mm256_set1_epi8, val) }
 }

@@ -1,16 +1,16 @@
 #[macro_export]
-macro_rules! execute_intrinsic_copy {
+macro_rules! execute_intrinsic {
     ($intrinsic:ident, $($arg:expr),*) => {
         unsafe { $intrinsic($(transmute_copy(&$arg)),*) }
     };
 }
 
-#[macro_export]
-macro_rules! execute_intrinsic {
-    ($intrinsic:ident, $($arg:expr),*) => {
-        unsafe { $intrinsic($(transmute($arg)),*) }
-    };
-}
+// #[macro_export]
+// macro_rules! execute_intrinsic {
+//     ($intrinsic:ident, $($arg:expr),*) => {
+//         unsafe { $intrinsic($(transmute($arg)),*) }
+//     };
+// }
 
 #[macro_export]
 macro_rules! execute_const_intrinsic {
@@ -19,12 +19,12 @@ macro_rules! execute_const_intrinsic {
     };
 }
 
-#[macro_export]
-macro_rules! self_from_op_copy {
-    ($intrinsic:ident, $($arg:expr),*) => {
-        unsafe { Self(transmute(execute_intrinsic_copy!($intrinsic, $($arg),*))) }
-    }
-}
+// #[macro_export]
+// macro_rules! self_from_op_copy {
+//     ($intrinsic:ident, $($arg:expr),*) => {
+//         unsafe { Self(transmute(execute_intrinsic_copy!($intrinsic, $($arg),*))) }
+//     }
+// }
 
 #[macro_export]
 macro_rules! self_from_op {
@@ -41,8 +41,8 @@ macro_rules! self_from_const_op {
 }
 
 pub use crate::execute_intrinsic;
-pub use crate::execute_intrinsic_copy;
+// pub use crate::execute_intrinsic_copy;
 pub use crate::execute_const_intrinsic;
 pub use crate::self_from_op;
-pub use crate::self_from_op_copy;
+// pub use crate::self_from_op_copy;
 pub use crate::self_from_const_op;

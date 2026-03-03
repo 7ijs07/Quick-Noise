@@ -11,115 +11,9 @@ use std::simd::num::SimdFloat;
 use crate::simd::simd_vec::core::SimdVec;
 use crate::simd::architectures::families::Avx2Family;
 use std::simd::num::SimdInt;
+use crate::simd::arch_simd::SelSimd;
 
-// ISSUE: ICE compiler error when using const generics for custom length.
-// impl Perlin {
-//     pub fn batched_2d(
-//         &mut self,
-//         output: &mut SimdArray<f32, 1024>,
-//         x_array: &SimdArray<f32, 1024>,
-//         y_array: &SimdArray<f32, 1024>,
-//         octave: &Octave2D,
-//         weight_coef: f32,
-//         channel_seed: u64,
-//         octave_offset: f32,
-//     ) where ArchSimd<f32>: StdFloat
-//     {
-//         let freq = ArchSimd::<f32>::splat(octave.scale.x);
-
-//         let int_one_vec = ArchSimd::<i32>::splat(1);
-//         let float_one_vec = ArchSimd::<f32>::splat(1.0);
-//         let rem_mask = ArchSimd::<u32>::splat(0xF);
-
-//         let x_prime = ArchSimd::<i32>::splat(501125321);
-//         let y_prime = ArchSimd::<i32>::splat(1136930381);
-
-//         // let entry_mask = ArchSimd::<u32>::splat(0xC0000000);
-//         let exp_bit = ArchSimd::<u32>::splat(0x40000000);
-//         let exit_mask = ArchSimd::<u32>::splat(0x7F000000);
-//         let sign_bit = ArchSimd::<u32>::splat(0x80000000);
-//         let ones_exp = ArchSimd::<u32>::splat(0x3F800000);
-
-//         // 00 -> 11111111111
-//         // 10 -> 01111111111
-//         // 01 -> 00111111111
-//         // 11 -> 10111111111
-
-//         // 0 0 -> 0100000000 -> 00000000000000000
-//         // 1 0 -> 1100000000 -> 10000000000000000
-//         // 0 1 -> 1011111111 -> 00111111100000000
-//         // 1 1 -> 1011111111 -> 10111111100000000
-
-//         for i in (0..1024).step_by(f32::LANES) {
-//             let x_vec = x_array.load_simd(i);
-//             let y_vec = y_array.load_simd(i);
-
-//             let x_scaled = x_vec * freq;
-//             let y_scaled = y_vec * freq;
-
-//             let x_scaled_floored = x_scaled.floor();
-//             let y_scaled_floored = y_scaled.floor();
-
-//             let x_grid_lo = unsafe { x_scaled_floored.floor().to_int_unchecked() };
-//             let y_grid_lo = unsafe { y_scaled_floored.floor().to_int_unchecked() };
-//             let x_grid_hi = x_grid_lo + int_one_vec;
-//             let y_grid_hi = y_grid_lo + int_one_vec;
-
-//             // let x_grid_lo_primed = x_grid_lo * x_prime;
-//             // let y_grid_lo_primed = y_grid_lo * y_prime;
-//             // let x_grid_hi_primed = x_grid_hi * x_prime;
-//             // let y_grid_hi_primed = y_grid_hi * y_prime;
-
-//             let x_dist_lo = x_scaled - x_scaled_floored;
-//             let y_dist_lo = y_scaled - y_scaled_floored;
-//             let x_dist_hi = x_dist_lo - float_one_vec;
-//             let y_dist_hi = y_dist_lo - float_one_vec;
-
-//             let x_lerp = x_dist_lo.quintic_lerp();
-//             let y_lerp = y_dist_lo.quintic_lerp();
-
-//             let (mix_tl, mix_tr, mix_bl, mix_br) =
-//                 self.random_gen.mix_u32_four_group(x_grid_lo.cast(), x_grid_hi.cast(), y_grid_lo.cast(), y_grid_hi.cast());
-
-//             let indices_tl = mix_tl >> 29;
-//             let indices_tr = mix_tr >> 29;
-//             let indices_bl = mix_bl >> 29;
-//             let indices_br = mix_br >> 29;
-
-//             // std::hint::black_box(indices_tl);
-//             // std::hint::black_box(indices_tr);
-//             // std::hint::black_box(indices_bl);
-//             // std::hint::black_box(indices_br);
-
-//             // let indices_tl = self.random_gen.mix_i32_simd_pair_fast(x_grid_lo_primed, y_grid_lo_primed) >> 28;
-//             // let indices_tr = self.random_gen.mix_i32_simd_pair_fast(x_grid_lo_primed, y_grid_hi_primed) >> 28;
-//             // let indices_bl = self.random_gen.mix_i32_simd_pair_fast(x_grid_hi_primed, y_grid_lo_primed) >> 28;
-//             // let indices_br = self.random_gen.mix_i32_simd_pair_fast(x_grid_hi_primed, y_grid_hi_primed) >> 28;
-
-//             let x_grads_tl = ArchSimd::gather_u32(&X_GRADIENTS_2D, indices_tl);
-//             let y_grads_tl = ArchSimd::gather_u32(&Y_GRADIENTS_2D, indices_tl);
-//             let x_grads_tr = ArchSimd::gather_u32(&X_GRADIENTS_2D, indices_tr);
-//             let y_grads_tr = ArchSimd::gather_u32(&Y_GRADIENTS_2D, indices_tr);
-//             let x_grads_bl = ArchSimd::gather_u32(&X_GRADIENTS_2D, indices_bl);
-//             let y_grads_bl = ArchSimd::gather_u32(&Y_GRADIENTS_2D, indices_bl);
-//             let x_grads_br = ArchSimd::gather_u32(&X_GRADIENTS_2D, indices_br);
-//             let y_grads_br = ArchSimd::gather_u32(&Y_GRADIENTS_2D, indices_br);
-
-//             let prod_tl = x_grads_tl.mul_add(x_dist_lo, y_grads_tl * y_dist_lo);
-//             let prod_tr = x_grads_tr.mul_add(x_dist_lo, y_grads_tr * y_dist_hi);
-//             let prod_bl = x_grads_bl.mul_add(x_dist_hi, y_grads_bl * y_dist_lo);
-//             let prod_br = x_grads_br.mul_add(x_dist_hi, y_grads_br * y_dist_hi);
-
-//             let top_lerp = y_lerp.mul_add(prod_tr - prod_tl, prod_tl);
-//             let bottom_lerp = y_lerp.mul_add(prod_br - prod_bl, prod_bl);
-
-//             let result = x_lerp.mul_add(bottom_lerp - top_lerp, top_lerp);
-            
-//             output.store_simd(i, result);
-//         }
-//     }
-// }
-
+// std::simd implementation.
 // impl Perlin {
 //     pub fn batched_2d(
 //         &mut self,
@@ -190,6 +84,7 @@ use std::simd::num::SimdInt;
 //     }
 // }
 
+// Custom simd wrapper implementation.
 impl Perlin {
     pub fn batched_2d(
         &mut self,
@@ -201,17 +96,16 @@ impl Perlin {
         channel_seed: u64,
         octave_offset: f32,
     ) {
-        let freq = SimdVec::<f32, Avx2Family>::splat(octave.scale.x);
+        let freq = SelSimd::<f32>::splat(octave.scale.x);
 
-        let int_one_vec = SimdVec::<i32, Avx2Family>::splat(1);
-        let float_one_vec = SimdVec::<f32, Avx2Family>::splat(1.0);
+        let float_one_vec = SelSimd::<f32>::splat(1.0);
 
-        let x_grads = SimdVec::load(&X_GRADIENTS_2D[..]);
-        let y_grads = SimdVec::load(&Y_GRADIENTS_2D[..]);
+        let x_grads = SelSimd::load(&X_GRADIENTS_2D[..]);
+        let y_grads = SelSimd::load(&Y_GRADIENTS_2D[..]);
 
-        for i in (0..1024).step_by(SimdVec::<f32, Avx2Family>::LANES) {
-            let x_vec = unsafe { SimdVec::load(&x_array.data.assume_init_ref()[i..]) };
-            let y_vec = unsafe { SimdVec::load(&y_array.data.assume_init_ref()[i..]) };
+        for i in (0..1024).step_by(SelSimd::<f32>::LANES) {
+            let x_vec = unsafe { SelSimd::load(&x_array.data.assume_init_ref()[i..]) };
+            let y_vec = unsafe { SelSimd::load(&y_array.data.assume_init_ref()[i..]) };
 
             let x_scaled = x_vec * freq;
             let y_scaled = y_vec * freq;

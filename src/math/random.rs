@@ -6,6 +6,7 @@ use std::simd::StdFloat;
 use crate::simd::simd_vec::core::SimdVec;
 use crate::simd::architectures::families::Avx2Family;
 use crate::simd::simd_traits::*;
+use crate::simd::arch_simd::SelSimd;
 
 pub struct Random {
     core_seed: u64,
@@ -159,59 +160,61 @@ impl Random {
     //     (tl, tr, bl, br)
     // }
 
+    // pub fn mix_u32_four_group(
+    //     &self, mut x1: SelSimd<u32>, mut y1: SelSimd<u32>) 
+    //         -> (SelSimd<u32>, SelSimd<u32>, SelSimd<u32>, SelSimd<u32>) 
+    //     {
+
+    //     // let core_seed = SimdVec::splat(self.core_seed as i32);
+    //     let channel_seed = SimdVec::splat(self.channel_seed as u32);
+    //     let prime = SimdVec::splat(0x85ebca6b_u32 as u32);
+
+    //     x1 *= channel_seed;
+    //     let mut x2 = x1 + channel_seed;
+    //     y1 *= channel_seed;
+    //     let mut y2 = y1 + channel_seed;
+
+    //     x1 ^= (x1 ^ prime) >> 16;
+    //     x2 ^= (x2 ^ prime) >> 16;
+    //     y1 ^= (y1 ^ prime) >> 16;
+    //     y2 ^= (y2 ^ prime) >> 16;
+
+    //     (x1 * y1, x1 * y2, x2 * y1, x2 * y2)
+    // }
+
     pub fn mix_u32_four_group(
-        &self, mut x1: SimdVec<u32, Avx2Family>, mut y1: SimdVec<u32, Avx2Family>) 
-            -> (SimdVec<u32, Avx2Family>, SimdVec<u32, Avx2Family>, SimdVec<u32, Avx2Family>, SimdVec<u32, Avx2Family>) 
+        &self, mut x1: SelSimd<u32>, mut y1: SelSimd<u32>) 
+            -> (SelSimd<u32>, SelSimd<u32>, SelSimd<u32>, SelSimd<u32>) 
         {
 
-        // const X_BYTE_SHUFFLE: [u8; 32] = [
-        //     3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
-        //     3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
-        // ];
+        const BYTE_SHUFFLE: [u8; 64] = [
+            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+        ];
 
-        // const Y_BYTE_SHUFFLE: [u8; 32] = [
-        //     0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2,
-        //     0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2, 0, 3, 1, 2,
-        // ];
-
-        // let x_shuffle_indices = SimdVec::<u8, Avx2Family>::load(&X_BYTE_SHUFFLE[..]);
-        // let y_shuffle_indices = SimdVec::<u8, Avx2Family>::load(&Y_BYTE_SHUFFLE[..]);
-
-        // let core_seed = SimdVec::splat(self.core_seed as i32);
-        let channel_seed = SimdVec::splat(self.channel_seed as u32);
-        let prime = SimdVec::splat(0x85ebca6b_u32 as u32);
-
-        // let x1_mix1 = x1 * channel_seed;
-        // let x2_mix1 = x2 * channel_seed;
-        // let y1_mix1 = y1 * channel_seed;
-        // let y2_mix1 = y2 * channel_seed;
-
-        // let x1_shuf = x1_mix1.raw_cast::<u8>().runtime_permute_bytes(x_shuffle_indices).raw_cast::<i32>() ^ prime;
-        // let y1_shuf = y1_mix1.raw_cast::<u8>().runtime_permute_bytes(y_shuffle_indices).raw_cast::<i32>() ^ prime;
-        // let x2_shuf = x2_mix1.raw_cast::<u8>().runtime_permute_bytes(x_shuffle_indices).raw_cast::<i32>() ^ prime;
-        // let y2_shuf = y2_mix1.raw_cast::<u8>().runtime_permute_bytes(y_shuffle_indices).raw_cast::<i32>() ^ prime;
+        let shuffle_indices = SelSimd::<u8>::load(&BYTE_SHUFFLE[..]);
+        let channel_seed = SelSimd::splat(self.channel_seed as u32);
+        let prime = SelSimd::splat(0x85ebca6b_u32 as u32);
 
         x1 *= channel_seed;
-        let mut x2 = x1 + channel_seed;
         y1 *= channel_seed;
-        let mut y2 = y1 + channel_seed;
 
-        x1 ^= (x1 ^ prime) >> 16;
-        x2 ^= (x2 ^ prime) >> 16;
-        y1 ^= (y1 ^ prime) >> 16;
-        y2 ^= (y2 ^ prime) >> 16;
+        let x2 = x1 + channel_seed;
+        let y2 = y1 + channel_seed;
 
+        let x1_shuf = x1.raw_cast::<u8>().runtime_permute_bytes(shuffle_indices).raw_cast::<u32>() ^ prime;
+        let y1_shuf = y1.raw_cast::<u8>().runtime_permute_bytes(shuffle_indices).raw_cast::<u32>() ^ prime;
+        let x2_shuf = x2.raw_cast::<u8>().runtime_permute_bytes(shuffle_indices).raw_cast::<u32>() ^ prime;
+        let y2_shuf = y2.raw_cast::<u8>().runtime_permute_bytes(shuffle_indices).raw_cast::<u32>() ^ prime;
 
-        // x1 = x1.
+        let tl = x1_shuf * y1_shuf;
+        let tr = x1_shuf * y2_shuf;
+        let bl = x2_shuf * y1_shuf;
+        let br = x2_shuf * y2_shuf;
 
-        // let tl = x1_shuf * y1_shuf;
-        // let tr = x1_shuf * y2_shuf;
-        // let bl = x2_shuf * y1_shuf;
-        // let br = x2_shuf * y2_shuf;
-
-        // (tl, tr, bl, br)
-
-        (x1 * y1, x1 * y2, x2 * y1, x2 * y2)
+        (tl, tr, bl, br)
     }
 
     // pub fn mix_u32_four_group(
