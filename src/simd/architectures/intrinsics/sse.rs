@@ -4,6 +4,7 @@ use std::mem::{transmute, transmute_copy};
 use crate::simd::architectures::macros::*;
 
 #[derive(Copy, Clone)]
+#[repr(transparent)]
 pub struct Sse(pub __m128i);
 impl SimdArch for Sse {}
 impl MaskArch for Sse {}
@@ -144,8 +145,8 @@ impl SimdOrdImpl for Sse {
 
 // TODO: Make a custom trait for handling this transmutation into i*.
 impl SimdSplatImpl for Sse {
-    #[inline(always)] fn splat_64<T>(val: T) -> Self { self_from_op_copy!(_mm_set1_epi64x, val) }
-    #[inline(always)] fn splat_32<T>(val: T) -> Self { self_from_op_copy!(_mm_set1_epi32, val) }
-    #[inline(always)] fn splat_16<T>(val: T) -> Self { self_from_op_copy!(_mm_set1_epi16, val) }
-    #[inline(always)] fn splat_8<T>(val: T) -> Self { self_from_op_copy!(_mm_set1_epi8, val) }
+    #[inline(always)] fn splat_64<T>(val: T) -> Self { self_from_op!(_mm_set1_epi64x, val) }
+    #[inline(always)] fn splat_32<T>(val: T) -> Self { self_from_op!(_mm_set1_epi32, val) }
+    #[inline(always)] fn splat_16<T>(val: T) -> Self { self_from_op!(_mm_set1_epi16, val) }
+    #[inline(always)] fn splat_8<T>(val: T) -> Self { self_from_op!(_mm_set1_epi8, val) }
 }
