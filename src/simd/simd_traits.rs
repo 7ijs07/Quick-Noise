@@ -58,10 +58,12 @@ pub trait SimdIota<T> {
 
 pub trait SimdMaskedLoad<T, F: SimdFamily> {
     fn masked_load(slice: &[T], mask: SimdMask<T, F>) -> Self;
+    fn partial_load(slice: &[T], amount: usize) -> Self;
 }
 
 pub trait SimdMaskedStore<T, F: SimdFamily> {
     fn masked_store(self, slice: &mut [T], mask: SimdMask<T, F>);
+    fn partial_store(self, slice: &mut [T], amount: usize);
 }
 
 pub trait SimdAndNot {

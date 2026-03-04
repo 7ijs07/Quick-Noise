@@ -19,18 +19,12 @@ fn main() {
     //     each successive octave is half as noticeable as the previous one.
     // - Channel allows for differing results for the same seed and octave scale. Acts as a second seed.
 
-    // search_magic();
+    // unofficial_profiler::profile_perlin_2d_batched_call(1, 32.0, 2.0, 0.5);
+    // grayscale::write_perlin_height_map_batched("noise_images/batched_pass.png", 32, 1, 1.0/32.0, 2.0, 0.5);
 
-    // let int_vec = SimdVec::<i32>::iota(8);
-    // let uint_vec = SimdVec::<u32>::splat(2);
-    // println!("Before: {:?}", int_vec);
-    // let new_vec = int_vec.runtime_permute(uint_vec);
-    // println!("After: {:?}", new_vec);
-
-    unofficial_profiler::profile_perlin_2d_batched_call(1, 32.0, 2.0, 0.5);
-    grayscale::write_perlin_height_map_batched("noise_images/batched_pass.png", 32, 1, 1.0/32.0, 2.0, 0.5);
-
+    // grayscale::write_perlin_height_map_3d("noise_images/single_pass_3d.png", 32, 1, 32.0, 2.0, 0.5);
     // grayscale::write_perlin_height_map("noise_images/single_pass.png", 32, 1, 32.0, 2.0, 0.5);
+
     // grayscale::write_perlin_height_map("noise_images/glossy.png", 32, 11, 256.0, 1.5, 0.7);
     // grayscale::write_perlin_height_map("noise_images/chiseled.png", 32, 6, 256.0, 2.0, 0.8);
     // grayscale::write_perlin_height_map("noise_images/smooth.png", 32, 20, 512.0, 1.2, 0.9);

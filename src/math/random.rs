@@ -6,7 +6,6 @@ use std::simd::StdFloat;
 use crate::simd::simd_vec::core::SimdVec;
 use crate::simd::architectures::families::Avx2Family;
 use crate::simd::simd_traits::*;
-use crate::simd::arch_simd::SelSimd;
 
 pub struct Random {
     core_seed: u64,
@@ -40,12 +39,12 @@ impl Random {
 
     pub fn mix_i32_simd_pair(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>) -> ArchSimd<u32> {
         let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
-        Self::mix_u32_pair_simd_impl(data1.cast() ^ seed_vec, data2.cast())
+        Self::mix_u32_pair_simd_impl(data1.raw_cast() ^ seed_vec, data2.raw_cast())
     }
 
     pub fn mix_i32_simd_pair_fast(&self, data1: ArchSimd<i32>, data2: ArchSimd<i32>) -> ArchSimd<u32> {
         let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
-        Self::mix_u32_pair_simd_fast_impl(data1.cast(), data2.cast(), seed_vec)
+        Self::mix_u32_pair_simd_fast_impl(data1.raw_cast(), data2.raw_cast(), seed_vec)
     }
 
     pub fn mix_i32_simd_triple(
@@ -56,7 +55,7 @@ impl Random {
     ) -> ArchSimd<u32> {
         let seed_vec = ArchSimd::<u32>::splat(self.channel_seed as u32);
 
-        Self::mix_u32_triple_simd_impl(data1.cast() ^ seed_vec, data2.cast(), data3.cast())
+        Self::mix_u32_triple_simd_impl(data1.raw_cast() ^ seed_vec, data2.raw_cast(), data3.raw_cast())
     }
 
     pub fn mix_u32(&self, data: u32) -> u32 {
@@ -161,8 +160,8 @@ impl Random {
     // }
 
     // pub fn mix_u32_four_group(
-    //     &self, mut x1: SelSimd<u32>, mut y1: SelSimd<u32>) 
-    //         -> (SelSimd<u32>, SelSimd<u32>, SelSimd<u32>, SelSimd<u32>) 
+    //     &self, mut x1: ArchSimd<u32>, mut y1: ArchSimd<u32>) 
+    //         -> (ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>) 
     //     {
 
     //     // let core_seed = SimdVec::splat(self.core_seed as i32);
@@ -183,8 +182,8 @@ impl Random {
     // }
 
     pub fn mix_u32_four_group(
-        &self, mut x1: SelSimd<u32>, mut y1: SelSimd<u32>) 
-            -> (SelSimd<u32>, SelSimd<u32>, SelSimd<u32>, SelSimd<u32>) 
+        &self, mut x1: ArchSimd<u32>, mut y1: ArchSimd<u32>) 
+            -> (ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>) 
         {
 
         const BYTE_SHUFFLE: [u8; 64] = [
@@ -194,9 +193,9 @@ impl Random {
             3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
         ];
 
-        let shuffle_indices = SelSimd::<u8>::load(&BYTE_SHUFFLE[..]);
-        let channel_seed = SelSimd::splat(self.channel_seed as u32);
-        let prime = SelSimd::splat(0x85ebca6b_u32 as u32);
+        let shuffle_indices = ArchSimd::<u8>::load(&BYTE_SHUFFLE[..]);
+        let channel_seed = ArchSimd::splat(self.channel_seed as u32);
+        let prime = ArchSimd::splat(0x85ebca6b_u32 as u32);
 
         x1 *= channel_seed;
         y1 *= channel_seed;

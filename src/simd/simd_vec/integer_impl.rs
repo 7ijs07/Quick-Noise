@@ -168,6 +168,29 @@ impl<T: SimdFloat, F: SimdFamily> Div for SimdVec<T, F> {
     }
 }
 
+
+// TODO TODO
+// impl<T: SimdInteger, F: SimdFamily> Rem for SimdVec<T, F> {
+//     type Output = Self;
+//     #[inline(always)]
+//     fn rem(self, rhs: Self) -> Self {
+//         Self::new(
+//             match T::TYPE {
+//                 SimdType::F64 => self.data.f64_sub(rhs.data),
+//                 SimdType::F32 => self.data.f32_sub(rhs.data),
+//                 SimdType::I64 => self.data.i64_sub(rhs.data),
+//                 SimdType::I32 => self.data.i32_sub(rhs.data),
+//                 SimdType::I16 => self.data.i16_sub(rhs.data),
+//                 SimdType::I8 => self.data.i8_sub(rhs.data),
+//                 SimdType::U64 => self.data.i64_sub(rhs.data),
+//                 SimdType::U32 => self.data.i32_sub(rhs.data),
+//                 SimdType::U16 => self.data.i16_sub(rhs.data),
+//                 SimdType::U8 => self.data.i8_sub(rhs.data),
+//             }
+//         )
+//     }
+// }
+
 // === Casts ===
 
 impl<T: SimdInteger + HasSigned, F: SimdFamily> SimdVec<T, F> {

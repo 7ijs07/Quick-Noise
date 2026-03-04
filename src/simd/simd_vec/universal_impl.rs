@@ -36,7 +36,7 @@ impl<T: SimdElement, F: SimdFamily> SimdLoad<T> for SimdVec<T, F> {
     #[inline(always)]
     fn load(slice: &[T]) -> Self {
         unsafe {
-            assert!(slice.len() >= Self::LANES);
+            // assert!(slice.len() >= Self::LANES);
             Self::new(F::Vec::load_unaligned(slice.as_ptr()))
         }
     }
@@ -55,7 +55,7 @@ impl<T: SimdElement, F: SimdFamily> SimdStore<T> for SimdVec<T, F> {
     fn store(self, slice: &mut [T]) {
         unsafe {
             let ptr = slice.as_mut_ptr();
-            assert!(slice.len() >= Self::LANES);
+            // assert!(slice.len() >= Self::LANES);
             self.data.store_unaligned(ptr);
         }
     }
@@ -72,10 +72,10 @@ impl<T: SimdElement, F: SimdFamily> SimdToArray<T, {Self::LANES}> for SimdVec<T,
 }
 
 // TODO: Fdd non-generic constant version solution.
-impl<T: SimdElement, F: SimdFamily> SimdIota<T> for SimdVec<T, F> where [(); Self::LANES]: {
+impl<T: SimdElement, F: SimdFamily> SimdIota<T> for SimdVec<T, F> {
     #[inline(always)]
     fn iota(offset: T) -> Self {
-        let iota_array: [T; Self::LANES] = std::array::from_fn(|i| <T as NumCast>::from(i).unwrap() + offset);
+        let iota_array: <T as SimdElement>::SimdArray::<F> = Array::<T>::from_fn(|i| <T as NumCast>::from(i).unwrap() + offset);
         Self::load(iota_array.as_slice())
     }
 }
@@ -169,10 +169,7 @@ where
     }
 }
 
-impl<T: SimdElement, F: SimdFamily> Neg for SimdVec<T, F> 
-where 
-    Self: Sub<Output = Self>
-{
+impl<T: SimdElement, F: SimdFamily> Neg for SimdVec<T, F> {
     type Output = Self;
     #[inline(always)]
     fn neg(self) -> Self {
@@ -184,5 +181,11 @@ impl<T: SimdElement, F: SimdFamily> SimdVec<T, F> {
     #[inline(always)]
     pub fn raw_cast<S: SimdElement>(self) -> SimdVec::<S, F> {
         SimdVec::new(self.data)
+    }
+}
+
+impl<T: SimdElement, F: SimdFamily> Default for SimdVec<T, F> {
+    fn default() -> Self {
+        Self::splat(<T as NumCast>::from(T::default()).unwrap())
     }
 }

@@ -4,14 +4,14 @@ use crate::noise::perlin::constants::*;
 use crate::noise::perlin::containers::*;
 use crate::perlin::Perlin;
 use crate::simd::simd_array::SimdArray;
-use crate::simd::arch_simd::{ArchSimd, SimdInfo, ArchSimdExt};
+use crate::simd::arch_simd::{ArchSimd, ArchMask};
 use std::simd::StdFloat;
 use crate::simd::simd_traits::*;
 use std::simd::num::SimdFloat;
 use crate::simd::simd_vec::core::SimdVec;
 use crate::simd::architectures::families::Avx2Family;
 use std::simd::num::SimdInt;
-use crate::simd::arch_simd::SelSimd;
+// use crate::simd::arch_simd::;
 
 // std::simd implementation.
 // impl Perlin {
@@ -96,16 +96,16 @@ impl Perlin {
         channel_seed: u64,
         octave_offset: f32,
     ) {
-        let freq = SelSimd::<f32>::splat(octave.scale.x);
+        let freq = ArchSimd::<f32>::splat(octave.scale.x);
 
-        let float_one_vec = SelSimd::<f32>::splat(1.0);
+        let float_one_vec = ArchSimd::<f32>::splat(1.0);
 
-        let x_grads = SelSimd::load(&X_GRADIENTS_2D[..]);
-        let y_grads = SelSimd::load(&Y_GRADIENTS_2D[..]);
+        let x_grads = ArchSimd::load(&X_GRADIENTS_2D[..]);
+        let y_grads = ArchSimd::load(&Y_GRADIENTS_2D[..]);
 
-        for i in (0..1024).step_by(SelSimd::<f32>::LANES) {
-            let x_vec = unsafe { SelSimd::load(&x_array.data.assume_init_ref()[i..]) };
-            let y_vec = unsafe { SelSimd::load(&y_array.data.assume_init_ref()[i..]) };
+        for i in (0..1024).step_by(ArchSimd::<f32>::LANES) {
+            let x_vec = unsafe { ArchSimd::load(&x_array.data.assume_init_ref()[i..]) };
+            let y_vec = unsafe { ArchSimd::load(&y_array.data.assume_init_ref()[i..]) };
 
             let x_scaled = x_vec * freq;
             let y_scaled = y_vec * freq;

@@ -102,7 +102,7 @@ impl<T: SimdFloat, F: SimdFamily> SimdEq for SimdVec<T, F> {
     }
 }
 
-impl<T: SimdFloat, F: SimdFamily> SimdPartialOrd for SimdVec<T, F> {
+impl<T: SimdElement, F: SimdFamily> SimdPartialOrd for SimdVec<T, F> {
     #[inline(always)]
     fn simd_gt(self, rhs: Self) -> SimdMask<T, F> {
         SimdMask::new(match T::TYPE {

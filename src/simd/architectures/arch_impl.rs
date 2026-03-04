@@ -1,5 +1,6 @@
 // OPERATIONS WITH NATIVE SUPPORT.
 use crate::simd::traits::*;
+use std::fmt::Debug;
 
 pub trait SimdFamily: Clone + Copy {
     const SIMD_WIDTH: usize;
@@ -9,7 +10,95 @@ pub trait SimdFamily: Clone + Copy {
         SimdOrdImpl<MaskType = Self::Mask>;
         // SimdPermuteImpl<BlockVec = <Self::BlockFamily as SimdFamily>::Vec>;
     type Mask: MaskArch + Copy + Clone;
+
+    type Array64<T: Debug + Copy>: Debug + Copy + Array<T>;
+    type Array32<T: Debug + Copy>: Debug + Copy + Array<T>;
+    type Array16<T: Debug + Copy>: Debug + Copy + Array<T>;
+    type Array8<T: Debug + Copy>: Debug + Copy + Array<T>;
 }
+
+// pub trait LaneCounts<T: SimdElement> {
+//     const LANES: usize;
+//     type ArrayType;
+// }
+
+// impl<F: SimdFamily, T: SimdElement> LaneCounts<T> for F {
+//     const LANES: usize = F::SIMD_WIDTH / std::mem::size_of::<T>();
+    
+//     // What I would like to do:
+//     type ArrayType = [T; F::SIMD_WIDTH / std::mem::size_of::<T>()];
+
+//     // OR make this manually for every type for every family, except then
+//     // SimdElement doesn't know it has that trait without an explicit bound.
+// }
+
+
+// pub trait FloatType: Config {} // ?
+// impl FloatType for f32 {}
+// impl FloatType for f64 {}
+
+// pub trait Config {}
+
+// struct Config1;
+// struct Config2;
+
+// impl Config for Config1 {}
+// impl Config for Config2 {}
+
+// pub trait FloatSecrets {
+//     type SecretArray: Default;
+// }
+
+// impl FloatSecrets for Config1 { type SecretArray = [f32; 8]; }
+// impl FloatSecrets for Config1 { type SecretArray = [f64; 4]; }
+
+// impl FloatSecrets<Config2> for f32 { type SecretArray = [f32; 16]; }
+// impl FloatSecrets<Config2> for f64 { type SecretArray = [f64; 8]; }
+
+// trait Array<T> {
+//     fn from_fn(f: impl FnMut(usize) -> T) -> Self;
+// }
+
+// impl<const N: usize, T> Array<T> for [T; N] {
+//     fn from_fn(f: impl FnMut(usize) -> T) -> Self {
+//         std::array::from_fn(f)
+//     }
+// }
+
+trait FloatType: Default {
+    type Array<C: Config>: Default + Array<Self>;
+}
+
+trait Config {
+    type F32Array: Default + Array<f32>;
+    type F64Array: Default + Array<f64>;
+}
+
+impl FloatType for f32 {
+    type Array<C: Config> = <C as Config>::F32Array;
+}
+
+impl FloatType for f64 {
+    type Array<C: Config> = C::F64Array;
+}
+
+struct Config1;
+struct Config2;
+
+impl Config for Config1 {
+    type F32Array = [f32; 8];
+    type F64Array = [f64; 4];
+}
+
+impl Config for Config2 {
+    type F32Array = [f32; 16];
+    type F64Array = [f64; 8];
+}
+
+fn example<T: FloatType, C: Config>() -> T::Array<C> {
+    Array::<T>::from_fn(|i| T::default())
+}
+
 pub trait SimdArch:
     Copy +
     Clone +

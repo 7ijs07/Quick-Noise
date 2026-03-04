@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use num_traits::{NumCast, NumOps};
 use std::ops::*;
+use crate::simd::architectures::arch_impl::SimdFamily;
 
 mod private {
     pub trait SealedTypes {}
@@ -63,6 +64,21 @@ impl BitWidth for B32 { const BIT_SIZE: usize = 32; }
 impl BitWidth for B16 { const BIT_SIZE: usize = 16; }
 impl BitWidth for B8 { const BIT_SIZE: usize = 8; }
 
+pub trait Array<T> {
+    fn from_fn(f: impl FnMut(usize) -> T) -> Self;
+    fn as_slice(&self) -> &[T];
+}
+
+impl<const N: usize, T> Array<T> for [T; N] {
+    fn from_fn(f: impl FnMut(usize) -> T) -> Self {
+        std::array::from_fn(f)
+    }
+
+    fn as_slice(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+
 // Need both enum and associated type for matching and bounds.
 pub trait SimdElement: 
     private::SealedTypes +
@@ -77,6 +93,7 @@ pub trait SimdElement:
     const PRIMITIVE_TYPE: PrimitiveType;
     const TYPE: SimdType;
     type BitWidthType: BitWidth;
+    type SimdArray<F: SimdFamily>: Debug + Copy + Array<Self>;
 }
 
 impl SimdElement for f64 {
@@ -84,60 +101,70 @@ impl SimdElement for f64 {
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::Float;
     const TYPE: SimdType = SimdType::F64;
     type BitWidthType = B64;
+    type SimdArray<F: SimdFamily> = F::Array64<f64>;
 }
 impl SimdElement for f32 {
     const BIT_SIZE: BitSize = BitSize::Size32;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::Float;
     const TYPE: SimdType = SimdType::F32;
     type BitWidthType = B32;
+    type SimdArray<F: SimdFamily> = F::Array32<f32>;
 }
 impl SimdElement for i64 {
     const BIT_SIZE: BitSize = BitSize::Size64;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::SignedInt;
     const TYPE: SimdType = SimdType::I64;
     type BitWidthType = B64;
+    type SimdArray<F: SimdFamily> = F::Array64<i64>;
 }
 impl SimdElement for i32 {
     const BIT_SIZE: BitSize = BitSize::Size32;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::SignedInt;
     const TYPE: SimdType = SimdType::I32;
     type BitWidthType = B32;
+    type SimdArray<F: SimdFamily> = F::Array32<i32>;
 }
 impl SimdElement for i16 {
     const BIT_SIZE: BitSize = BitSize::Size16;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::SignedInt;
     const TYPE: SimdType = SimdType::I16;
     type BitWidthType = B16;
+    type SimdArray<F: SimdFamily> = F::Array16<i16>;
 }
 impl SimdElement for i8 {
     const BIT_SIZE: BitSize = BitSize::Size8;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::SignedInt;
     const TYPE: SimdType = SimdType::I8;
     type BitWidthType = B8;
+    type SimdArray<F: SimdFamily> = F::Array8<i8>;
 }
 impl SimdElement for u64 {
     const BIT_SIZE: BitSize = BitSize::Size64;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::UnsignedInt;
     const TYPE: SimdType = SimdType::U64;
     type BitWidthType = B64;
+    type SimdArray<F: SimdFamily> = F::Array64<u64>;
 }
 impl SimdElement for u32 {
     const BIT_SIZE: BitSize = BitSize::Size32;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::UnsignedInt;
     const TYPE: SimdType = SimdType::U32;
     type BitWidthType = B32;
+    type SimdArray<F: SimdFamily> = F::Array32<u32>;
 }
 impl SimdElement for u16 {
     const BIT_SIZE: BitSize = BitSize::Size16;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::UnsignedInt;
     const TYPE: SimdType = SimdType::U16;
     type BitWidthType = B16;
+    type SimdArray<F: SimdFamily> = F::Array16<u16>;
 }
 impl SimdElement for u8 {
     const BIT_SIZE: BitSize = BitSize::Size8;
     const PRIMITIVE_TYPE: PrimitiveType = PrimitiveType::UnsignedInt;
     const TYPE: SimdType = SimdType::U8;
     type BitWidthType = B8;
+    type SimdArray<F: SimdFamily> = F::Array8<u8>;
 }
 
 // pub trait BitSize: private::Sealed + Sized {

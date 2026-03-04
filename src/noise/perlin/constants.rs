@@ -83,9 +83,9 @@ pub const GRADIENTS_2D: [Vec2<f32>; 16] = [
 //     Vec2::new(0.923880, -0.382683),
 // ];
 
-const SCALE: f32 = std::f32::consts::SQRT_2 / 2.6131259; // ≈ 0.5412
-const A: f32 = (1.0 + std::f32::consts::SQRT_2) * SCALE; // ≈ 1.3066
-const B: f32 = 1.0 * SCALE; 
+// const SCALE: f32 = std::f32::consts::SQRT_2 / 2.6131259; // ≈ 0.5412
+// const A: f32 = (1.0 + std::f32::consts::SQRT_2) * SCALE; // ≈ 1.3066
+// const B: f32 = 1.0 * SCALE; 
 
 // pub const X_GRADIENTS_2D: [f32; 16] = [
 //      A, -A,  A, -A,  B,  B, -B, -B,
