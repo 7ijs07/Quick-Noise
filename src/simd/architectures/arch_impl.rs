@@ -120,7 +120,8 @@ pub trait SimdArch:
     SimdMulAddImpl +
     SimdRoundImpl +
     SimdOrdImpl +
-    SimdSplatImpl
+    SimdSplatImpl +
+    SimdGatherImpl +
 {}
 
 pub trait MaskArch:
@@ -286,4 +287,11 @@ pub trait SimdSplatImpl {
     fn splat_32<T>(val: T) -> Self;
     fn splat_16<T>(val: T) -> Self;
     fn splat_8<T>(val: T) -> Self;
+}
+
+pub trait SimdGatherImpl {
+    fn gather_32_from_32<T, const B: i32>(self, ptr: *const T) -> Self;
+    // fn gather_64_from_32<T, const B: i32>(ptr: *const T, indicies: Self) -> Self;
+    // fn gather_32_from_64<T, const B: i32>(ptr: *const T, indicies: Self) -> Self;
+    fn gather_64_from_64<T, const B: i32>(self, ptr: *const T) -> Self;
 }

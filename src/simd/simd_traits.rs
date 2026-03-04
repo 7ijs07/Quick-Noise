@@ -2,6 +2,7 @@ use std::ops::*;
 use crate::simd::architectures::arch_impl::SimdFamily;
 use crate::simd::traits::*;
 use crate::simd::simd_mask::core::SimdMask;
+use crate::simd::simd_vec::core::SimdVec;
 
 pub trait SimdVecInteger:
     Sized +
@@ -95,6 +96,10 @@ pub trait SimdPartialOrd: SimdContext {
     fn simd_gt(self, rhs: Self) -> SimdMask<Self::Element, Self::Family>;
     fn simd_ge(self, rhs: Self) -> SimdMask<Self::Element, Self::Family>;
 }
+
+// pub trait SimdGather<T>: SimdContext {
+//     fn gather<S: SimdElement + SimdElement<BitWidth>, const N: usize>(self, slice: &[S; N]) -> SimdVec<S, Self::Family>;
+// }
 
 //  pub fn zero() -> Self {
 //         Self::new(A::zero())

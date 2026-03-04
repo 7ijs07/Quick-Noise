@@ -150,3 +150,10 @@ impl SimdSplatImpl for Avx2 {
     #[inline(always)] fn splat_16<T>(val: T) -> Self { self_from_op!(_mm256_set1_epi16, val) }
     #[inline(always)] fn splat_8<T>(val: T) -> Self { self_from_op!(_mm256_set1_epi8, val) }
 }
+
+impl SimdGatherImpl for Avx2 {
+    #[inline(always)] fn gather_32_from_32<T, const B: i32>(self, ptr: *const T) -> Self { self_from_const_op!(_mm256_i32gather_epi32, B, ptr, self) }
+    // #[inline(always)] fn gather_64_from_32<T, const B: i32>(self, ptr: *const T) -> Self { self_from_const_op!(_mm256_i32gather_epi64, B, ptr, self) }
+    // #[inline(always)] fn gather_32_from_64<T, const B: i32>(self, ptr: *const T) -> Self { self_from_const_op!(_mm256_i64gather_epi32, B, ptr, self) }
+    #[inline(always)] fn gather_64_from_64<T, const B: i32>(self, ptr: *const T) -> Self { self_from_const_op!(_mm256_i64gather_epi64, B, ptr, self) }
+}

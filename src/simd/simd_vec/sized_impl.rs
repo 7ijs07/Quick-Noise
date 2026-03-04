@@ -3,6 +3,8 @@ use crate::simd::traits::*;
 use crate::simd::simd_vec::core::SimdVec;
 use crate::simd::simd_mask::core::SimdMask;
 use crate::simd::simd_traits::*;
+use crate::simd::simd_vec::universal_impl;
+use num_traits::NumCast;
 
 impl<T: SimdElement, F: SimdFamily> SimdVec<T, F> {
     #[inline(always)]
@@ -29,16 +31,28 @@ impl<T: SimdWideType, F: SimdFamily> SimdMaskedLoad<T, F> for SimdVec<T, F> {
             }
         )
     }
+
+    fn partial_load(slice: &[T], amount: usize) -> Self {
+        let amount_vec = Self::splat(<T as NumCast>::from(amount).unwrap());
+        let mask = Self::iota(<T as NumCast>::from(0).unwrap()).simd_lt(amount_vec);
+        Self::masked_load(slice, mask)
+    }
 }
 
-impl<T: SimdWideType, F: SimdFamily> SimdMaskedStore<T, F> for SimdVec<T, F> {
+impl<T: SimdElement, F: SimdFamily> SimdMaskedStore<T, F> for SimdVec<T, F> {
     #[inline(always)]
     fn masked_store(self, slice: &mut [T], mask: SimdMask<T, F>) {
         match T::BIT_SIZE {
             BitSize::Size64 => F::Vec::masked_store_64(self.data, slice.as_mut_ptr(), mask.data),
             BitSize::Size32 => F::Vec::masked_store_32(self.data, slice.as_mut_ptr(), mask.data),
-            _ => unreachable!()
+            _ => unreachable!() // TODO: ADD SUPPORT FOR OTHER SIZES!!!
         }
+    }
+
+    fn partial_store(self, slice: &mut [T], amount: usize) {
+        let amount_vec = Self::splat(<T as NumCast>::from(amount).unwrap());
+        let mask = Self::iota(<T as NumCast>::from(0).unwrap()).simd_lt(amount_vec);
+        Self::masked_store(self, slice, mask);
     }
 }
 
@@ -53,5 +67,23 @@ impl<T: SimdElement + SimdElement<BitWidthType = B8>, F: SimdFamily> SimdVec<T, 
     #[inline(always)]
     pub fn runtime_permute_bytes(self, indices: Self) -> Self {
         Self::new(self.data.permute_8(indices.data))
+    }
+}
+
+// TODO: Super early version gather.
+impl<F: SimdFamily> SimdVec<u32, F> {
+    pub fn gather<S: SimdElement + SimdElement<BitWidthType = B32>, const N: usize>(self, slice: &[S; N]) -> SimdVec<S, F> {
+        if N <= Self::LANES {
+            let data = SimdVec::<S, F>::load(&slice[..]);
+            data.runtime_permute(self)
+        } else {
+            SimdVec::new(self.data.gather_32_from_32::<S, 4>(slice.as_ptr()))
+        }
+    }
+}
+
+impl<F: SimdFamily> SimdVec<u64, F> {
+    pub fn gather<S: SimdElement + SimdElement<BitWidthType = B64>, const N: usize>(self, slice: &[S; N]) -> SimdVec<S, F> {
+        SimdVec::new(self.data.gather_32_from_32::<S, 8>(slice.as_ptr()))
     }
 }

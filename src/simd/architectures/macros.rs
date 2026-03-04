@@ -29,14 +29,14 @@ macro_rules! execute_const_intrinsic {
 #[macro_export]
 macro_rules! self_from_op {
     ($intrinsic:ident, $($arg:expr),*) => {
-        unsafe { Self(transmute_copy(&execute_intrinsic!($intrinsic, $($arg),*))) }
+        unsafe { Self(transmute_copy(&$intrinsic($(transmute_copy(&$arg)),*))) }
     }
 }
 
 #[macro_export]
 macro_rules! self_from_const_op {
     ($intrinsic:ident, $const:expr, $($arg:expr),*) => {
-        unsafe { Self(transmute(execute_const_intrinsic!($intrinsic, $const, $($arg),*))) }
+        unsafe { Self(transmute($intrinsic::<{$const}>($(transmute($arg)),*))) }
     }
 }
 

@@ -100,8 +100,8 @@ impl Perlin {
 
         let float_one_vec = ArchSimd::<f32>::splat(1.0);
 
-        let x_grads = ArchSimd::load(&X_GRADIENTS_2D[..]);
-        let y_grads = ArchSimd::load(&Y_GRADIENTS_2D[..]);
+        // let x_grads = ArchSimd::load(&X_GRADIENTS_2D[..]);
+        // let y_grads = ArchSimd::load(&Y_GRADIENTS_2D[..]);
 
         for i in (0..1024).step_by(ArchSimd::<f32>::LANES) {
             let x_vec = unsafe { ArchSimd::load(&x_array.data.assume_init_ref()[i..]) };
@@ -132,14 +132,14 @@ impl Perlin {
             let indices_bl = mix_bl >> 29;
             let indices_br = mix_br >> 29;
 
-            let x_grads_tl = x_grads.runtime_permute(indices_tl);
-            let y_grads_tl = y_grads.runtime_permute(indices_tl);
-            let x_grads_tr = x_grads.runtime_permute(indices_tr);
-            let y_grads_tr = y_grads.runtime_permute(indices_tr);
-            let x_grads_bl = x_grads.runtime_permute(indices_bl);
-            let y_grads_bl = y_grads.runtime_permute(indices_bl);
-            let x_grads_br = x_grads.runtime_permute(indices_br);
-            let y_grads_br = y_grads.runtime_permute(indices_br);
+            let x_grads_tl = indices_tl.gather(&X_GRADIENTS_2D);
+            let y_grads_tl = indices_tl.gather(&Y_GRADIENTS_2D);
+            let x_grads_tr = indices_tr.gather(&X_GRADIENTS_2D);
+            let y_grads_tr = indices_tr.gather(&Y_GRADIENTS_2D);
+            let x_grads_bl = indices_bl.gather(&X_GRADIENTS_2D);
+            let y_grads_bl = indices_bl.gather(&Y_GRADIENTS_2D);
+            let x_grads_br = indices_br.gather(&X_GRADIENTS_2D);
+            let y_grads_br = indices_br.gather(&Y_GRADIENTS_2D);
 
             let prod_tl = x_grads_tl.mul_add(x_dist_lo, y_grads_tl * y_dist_lo);
             let prod_tr = x_grads_tr.mul_add(x_dist_lo, y_grads_tr * y_dist_hi);
