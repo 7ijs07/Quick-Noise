@@ -120,7 +120,7 @@ impl Perlin {
             // let result = x_lerp.mul_add(bottom_lerp - top_lerp, top_lerp);
             
             // Store: 1
-            unsafe { result.store_aligned(&mut output.data.assume_init_mut()[i..]); }
+            output.store_simd(i, result);
         }
     }
 
@@ -353,7 +353,7 @@ impl Perlin {
             let result = x_lerp.mul_add(lerp_back - lerp_front, lerp_front);
             
             // Store: 1
-            unsafe { result.store_aligned(&mut output.data.assume_init_mut()[i..]); }
+            output.store_simd(i, result);
         }
     }
 }

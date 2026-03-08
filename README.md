@@ -6,7 +6,8 @@ WIP High performance SIMD batched processing noise library. Made in Rust.
 
 Very early work in progress! Only 2D Perlin uniform grid and 3D Perlin uniform grid is completed. Feel free to add to or improve on the library!
 
-Rust nightly is **required** to use this library. It utilizes std::simd, which is only available on nightly.
+Rust nightly is not needed to use this library. It utilizes a custom simd wrapper rather than std::simd. However, only x86 systems are currently supported (ie SSE, AVX2, and AVX512) Aarch (arm) will be added
+in the future.
 
 # Performance
 

@@ -23,7 +23,7 @@ impl Perlin {
 
         const NUM_BLOCKS_POSSIBLE: usize = NUM_SIMD_REG / 8;
         const MAX_NUM_BLOCKS: usize = ROW_SIZE / ArchSimd::<f32>::LANES;
-        const NUM_BLOCKS: usize = NUM_BLOCKS_POSSIBLE.min(MAX_NUM_BLOCKS);
+        const NUM_BLOCKS: usize = if NUM_BLOCKS_POSSIBLE < MAX_NUM_BLOCKS { NUM_BLOCKS_POSSIBLE } else { MAX_NUM_BLOCKS };
 
         for y_it in (0..ROW_SIZE).step_by(ArchSimd::<f32>::LANES * NUM_BLOCKS) {
             // Set up registers per block. Initialization is just to keep Rust happy. Compiler will optimize away.
@@ -252,7 +252,7 @@ impl Perlin {
 
         const NUM_BLOCKS_POSSIBLE: usize = NUM_SIMD_REG / 8;
         const MAX_NUM_BLOCKS: usize = ROW_SIZE / ArchSimd::<f32>::LANES;
-        const NUM_BLOCKS: usize = NUM_BLOCKS_POSSIBLE.min(MAX_NUM_BLOCKS);
+        const NUM_BLOCKS: usize = if NUM_BLOCKS_POSSIBLE < MAX_NUM_BLOCKS { NUM_BLOCKS_POSSIBLE } else { MAX_NUM_BLOCKS };
 
         let mut x_counter: f32 = 0.0;
         for x_it in x_start_index..x_end_index {
