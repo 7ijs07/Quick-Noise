@@ -156,14 +156,14 @@ impl<T: SimdElement, const N: usize> SimdArray<T, N> {
     pub fn load_simd(&self, index: usize) -> ArchSimd<T> {
         debug_assert!(index + ArchSimd::<T>::LANES <= N);
         debug_assert!(index % ArchSimd::<T>::LANES == 0);
-        unsafe { ArchSimd::load(&self.data.assume_init_ref().get_unchecked(index..)) }
+        unsafe { ArchSimd::load_aligned(&self.data.assume_init_ref().get_unchecked(index..)) }
     }
 
     #[inline(always)]
     pub fn store_simd(&mut self, index: usize, vec: ArchSimd<T>) {
         debug_assert!(index + ArchSimd::<T>::LANES <= N);
         debug_assert!(index % ArchSimd::<T>::LANES == 0);
-        unsafe { vec.store(&mut self.data.assume_init_mut().get_unchecked_mut(index..)); }
+        unsafe { vec.store_aligned(&mut self.data.assume_init_mut().get_unchecked_mut(index..)); }
     }
 
     #[inline(always)]
@@ -205,24 +205,49 @@ impl<T: SimdElement, const N: usize> Neg for SimdArray<T, N> {
 // === Additional Operations ===
 
 impl<T: SimdElement, const N: usize> SimdArray<T, N> {
+    #[inline(always)]
     pub fn multiset_many<const M: usize>(arrays: &mut [&mut Self; M], values: &[T; M], mut index: usize, mut amount: isize) {
         let vecs: [ArchSimd<T>; M] = std::array::from_fn(|i| ArchSimd::<T>::splat(values[i]));
 
-        let indices = ArchSimd::load(&std::array::from_fn::<T, N, _>(|i| <T as NumCast>::from(i).unwrap()));
+        let indices = ArchSimd::load(&std::array::from_fn::<i32, N, _>(|i| i as i32));
         
         // TODO: Make masks work natively different types.
         while amount > 0 {
-            let amounts = ArchSimd::splat(<T as NumCast>::from(amount).unwrap());
-            let mask = indices.simd_lt(amounts);
+            let amounts = ArchSimd::splat(amount as i32);
+            let mask = amounts.simd_gt(indices);
+
+            // println!("amounts: {:?}", amounts);
+            // println!("indices: {:?}", indices);
+
             for i in 0..M {
                 debug_assert!(i < M);
-                unsafe { arrays[i].masked_store_simd(index, *vecs.get_unchecked(i), mask); }
+                unsafe { arrays[i].masked_store_simd(index, *vecs.get_unchecked(i), mask.raw_cast()); }
             }
             amount -= ArchSimd::<T>::LANES as isize;
             index += ArchSimd::<T>::LANES;
         }
     }
 }
+
+// impl<T: SimdElement, const N: usize> SimdArray<T, N> {
+//     pub fn multiset_many<const M: usize>(arrays: &mut [&mut Self; M], values: &[T; M], mut index: usize, mut amount: isize) {
+//         let vecs: [ArchSimd<T>; M] = std::array::from_fn(|i| ArchSimd::<T>::splat(values[i]));
+
+//         let indices = ArchSimd::load(&std::array::from_fn::<T, N, _>(|i| <T as NumCast>::from(i).unwrap()));
+        
+//         while amount > 0 {
+//             let amounts = ArchSimd::splat(<T as NumCast>::from(amount).unwrap());
+//             let mask = indices.simd_lt(amounts);
+//             for i in 0..M {
+//                 debug_assert!(i < M);
+//                 unsafe { arrays[i].masked_store_simd(index, *vecs.get_unchecked(i), mask); }
+//             }
+//             amount -= ArchSimd::<T>::LANES as isize;
+//             index += ArchSimd::<T>::LANES;
+//         }
+//     }
+// }
+
 
 impl<T: SimdElement + std::default::Default, const N: usize> SimdArray<T, N> {
     // No easily built-in std::simd solution, let compiler auto-vectorize.
@@ -326,13 +351,36 @@ impl<T: SimdFloat, const N: usize> SimdArray<T, N> {
 
         result
     }
-}
 
-impl<T: SimdFloat, const N: usize> SimdArray<T, N> {
     pub fn mul_sub(self, mult: Self, offset: Self) -> Self {
-        self.mul_add(mult, -offset)
+        let mut result = Self::new_uninit();
+        for i in (0..Self::TAIL_START).step_by(ArchSimd::<T>::LANES) {
+            let data_vec = self.load_simd(i);
+            let mult_vec = mult.load_simd(i);
+            let offset_vec = offset.load_simd(i);
+
+            let new_data = data_vec.mul_sub(mult_vec, offset_vec);
+            result.store_simd(i, new_data);
+        }
+
+        if Self::HAS_TAIL {
+            let data_vec = self.load_simd(Self::TAIL_START);
+            let mult_vec = mult.load_simd(Self::TAIL_START);
+            let offset_vec = offset.load_simd(Self::TAIL_START);
+
+            let new_data = data_vec.mul_sub(mult_vec, offset_vec);
+            result.partial_store_simd(Self::TAIL_START, new_data, Self::TAIL_SIZE);
+        }
+
+        result
     }
 }
+
+// impl<T: SimdFloat, const N: usize> SimdArray<T, N> {
+//     pub fn mul_sub(self, mult: Self, offset: Self) -> Self {
+//         self.mul_add(mult, -offset)
+//     }
+// }
 
 impl<T: SimdFloat, const N: usize> SimdArray<T, N> {
     pub fn quintic_lerp(&self) -> Self {

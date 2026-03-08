@@ -1,4 +1,4 @@
-use std::simd::{Simd, SimdElement, StdFloat};
+// use std::simd::{Simd, SimdElement, StdFloat};
 use std::ops::{Mul, Neg};
 use num_traits::{Float, NumCast};
 use std::f32::consts::SQRT_2;

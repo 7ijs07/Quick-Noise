@@ -4,6 +4,13 @@ use crate::simd::traits::*;
 use crate::simd::simd_mask::core::SimdMask;
 use crate::simd::simd_vec::core::SimdVec;
 
+pub trait SimdVecBasic<T: SimdElement, F: SimdFamily>:
+    Sized +
+    SimdToArray<T, F> +
+{}
+
+impl<T: SimdElement, F: SimdFamily> SimdVecBasic<T, F> for SimdVec<T, F> {}
+
 pub trait SimdVecInteger:
     Sized +
     Shl<Self> +
@@ -48,9 +55,8 @@ pub trait SimdStore<T> {
     fn store(self, slice: &mut [T]);
 }
 
-pub trait SimdToArray<T, const N: usize> {
-    // const LANES: usize;
-    fn to_array(self) -> [T; N];
+pub trait SimdToArray<T: SimdElement, F: SimdFamily> {
+    fn to_array(self) -> T::Array<F>;
 }
 
 pub trait SimdIota<T> {
@@ -95,6 +101,10 @@ pub trait SimdPartialOrd: SimdContext {
     fn simd_le(self, rhs: Self) -> SimdMask<Self::Element, Self::Family>;
     fn simd_gt(self, rhs: Self) -> SimdMask<Self::Element, Self::Family>;
     fn simd_ge(self, rhs: Self) -> SimdMask<Self::Element, Self::Family>;
+}
+
+pub trait SimdBlend: SimdContext {
+    fn blend_32(self, other: Self, mask: SimdMask<Self::Element, Self::Family>) -> Self;
 }
 
 // pub trait SimdGather<T>: SimdContext {

@@ -1,15 +1,14 @@
 // Primitive but fast module for generating random-looking outputs.
 
 use crate::simd::arch_simd::ArchSimd;
-use std::simd::num::SimdInt;
-use std::simd::StdFloat;
+use crate::simd::array_trait::Array;
 use crate::simd::simd_vec::core::SimdVec;
 use crate::simd::architectures::families::Avx2Family;
 use crate::simd::simd_traits::*;
 
 pub struct Random {
     core_seed: u64,
-    channel_seed: u64,
+    pub channel_seed: u64,
 }
 
 impl Random {
@@ -203,10 +202,10 @@ impl Random {
         let x2 = x1 + channel_seed;
         let y2 = y1 + channel_seed;
 
-        let x1_shuf = x1.raw_cast::<u8>().runtime_permute_bytes(shuffle_indices).raw_cast::<u32>() ^ prime;
-        let y1_shuf = y1.raw_cast::<u8>().runtime_permute_bytes(shuffle_indices).raw_cast::<u32>() ^ prime;
-        let x2_shuf = x2.raw_cast::<u8>().runtime_permute_bytes(shuffle_indices).raw_cast::<u32>() ^ prime;
-        let y2_shuf = y2.raw_cast::<u8>().runtime_permute_bytes(shuffle_indices).raw_cast::<u32>() ^ prime;
+        let x1_shuf = x1.permute_8(shuffle_indices) ^ prime;
+        let y1_shuf = y1.permute_8(shuffle_indices) ^ prime;
+        let x2_shuf = x2.permute_8(shuffle_indices) ^ prime;
+        let y2_shuf = y2.permute_8(shuffle_indices) ^ prime;
 
         let tl = x1_shuf * y1_shuf;
         let tr = x1_shuf * y2_shuf;
@@ -215,6 +214,33 @@ impl Random {
 
         (tl, tr, bl, br)
     }
+
+    // pub fn mix_u32_two_group(&self, mut x: ArchSimd<u32>, mut y: ArchSimd<u32>) -> (ArchSimd<u32>, ArchSimd<u32>)
+
+    // pub fn mix_u32_four_group(
+    //     &self, mut x1: ArchSimd<u32>, mut y1: ArchSimd<u32>) -> (ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>, ArchSimd<u32>) {
+
+    //     let channel_seed = ArchSimd::splat(self.channel_seed as u32);
+    //     let prime = ArchSimd::splat(0x85ebca6b_u32 as u32);
+
+    //     x1 *= channel_seed;
+    //     y1 *= channel_seed;
+    //     let x2 = x1 + channel_seed;
+    //     let y2 = y1 + channel_seed;
+
+    //     const BYTE_SHUFFLE: [u8; 4] = [3, 0, 2, 1];
+    //     let x1_shuf = x1.permute_8_pattern_32(BYTE_SHUFFLE) ^ prime;
+    //     let y1_shuf = y1.permute_8_pattern_32(BYTE_SHUFFLE) ^ prime;
+    //     let x2_shuf = x2.permute_8_pattern_32(BYTE_SHUFFLE) ^ prime;
+    //     let y2_shuf = y2.permute_8_pattern_32(BYTE_SHUFFLE) ^ prime;
+
+    //     let tl = x1_shuf * y1_shuf;
+    //     let tr = x1_shuf * y2_shuf;
+    //     let bl = x2_shuf * y1_shuf;
+    //     let br = x2_shuf * y2_shuf;
+
+    //     (tl, tr, bl, br)
+    // }
 
     // pub fn mix_u32_four_group(
     //     &self,

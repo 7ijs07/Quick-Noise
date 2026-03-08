@@ -1,6 +1,7 @@
 // OPERATIONS WITH NATIVE SUPPORT.
 use crate::simd::traits::*;
 use std::fmt::Debug;
+use crate::simd::array_trait::Array;
 
 pub trait SimdFamily: Clone + Copy {
     const SIMD_WIDTH: usize;
@@ -54,7 +55,6 @@ pub trait SimdFamily: Clone + Copy {
 
 // impl FloatSecrets<Config2> for f32 { type SecretArray = [f32; 16]; }
 // impl FloatSecrets<Config2> for f64 { type SecretArray = [f64; 8]; }
-
 // trait Array<T> {
 //     fn from_fn(f: impl FnMut(usize) -> T) -> Self;
 // }
@@ -65,39 +65,42 @@ pub trait SimdFamily: Clone + Copy {
 //     }
 // }
 
-trait FloatType: Default {
-    type Array<C: Config>: Default + Array<Self>;
-}
+// trait FloatType: Default {
+//     type Array<C: Config>: Default + Array<Self>;
+// }
 
-trait Config {
-    type F32Array: Default + Array<f32>;
-    type F64Array: Default + Array<f64>;
-}
+// trait Config {
+//     type F32Array: Default + Array<f32>;
+//     type F64Array: Default + Array<f64>;
+// }
 
-impl FloatType for f32 {
-    type Array<C: Config> = <C as Config>::F32Array;
-}
+// impl FloatType for f32 {
+//     type Array<C: Config> = <C as Config>::F32Array;
+// }
 
-impl FloatType for f64 {
-    type Array<C: Config> = C::F64Array;
-}
+// impl FloatType for f64 {
+//     type Array<C: Config> = C::F64Array;
+// }
 
-struct Config1;
-struct Config2;
+// struct Config1;
+// struct Config2;
 
-impl Config for Config1 {
-    type F32Array = [f32; 8];
-    type F64Array = [f64; 4];
-}
+// impl Config for Config1 {
+//     type F32Array = [f32; 8];
+//     type F64Array = [f64; 4];
+// }
 
-impl Config for Config2 {
-    type F32Array = [f32; 16];
-    type F64Array = [f64; 8];
-}
+// impl Config for Config2 {
+//     type F32Array = [f32; 16];
+//     type F64Array = [f64; 8];
+// }
 
-fn example<T: FloatType, C: Config>() -> T::Array<C> {
-    Array::<T>::from_fn(|i| T::default())
-}
+// fn example<T: FloatType, C: Config, const N: usize>() -> [T; N] 
+// where
+//   <T as FloatType>::Array<C>: Into<[T; N]>
+// {
+//     <<T as FloatType>::Array<C> as Array<T>>::from_fn(|i| T::default()).into()
+// }
 
 pub trait SimdArch:
     Copy +
@@ -233,9 +236,10 @@ pub trait SimdPermuteImpl {
 }
 
 pub trait SimdVariableBlendImpl {
-    fn vblend_64(self, other: Self, mask: Self) -> Self;
-    fn vblend_32(self, other: Self, mask: Self) -> Self;
-    fn vblend_8(self, other: Self, mask: Self) -> Self;
+    type MaskType;
+    fn vblend_64(self, other: Self, mask: Self::MaskType) -> Self;
+    fn vblend_32(self, other: Self, mask: Self::MaskType) -> Self;
+    fn vblend_8(self, other: Self, mask: Self::MaskType) -> Self;
 }
 
 pub trait SimdMulAddImpl {

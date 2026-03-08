@@ -5,7 +5,7 @@ use crate::simd::simd_array::SimdArray;
 use crate::simd::simd_traits::*;
 
 impl Perlin {
-    // #[inline(never)]
+    #[inline(never)]
     pub(super) fn set_uniform_grid_gradients_2d (
         &mut self,
         left: &mut PerlinVecPair,
@@ -17,23 +17,33 @@ impl Perlin {
         y_num_loops: u32,
         y_distances: &PerlinVec,
     ) {
-        let iota_vec = ArchSimd::iota(0);
-        let mut y_vec = ArchSimd::splat(y_start) + iota_vec;
-        let x_vec = ArchSimd::splat(x_start);
+        let iota_vec = ArchSimd::iota(0) * ArchSimd::splat(self.random_gen.channel_seed as u32);
+        let x_vec = ArchSimd::splat((x_start as u32).wrapping_mul(self.random_gen.channel_seed as u32));
+        let mut y_vec = ArchSimd::splat((y_start as u32).wrapping_mul(self.random_gen.channel_seed as u32)) + iota_vec;
+        let y_vec_stride = ArchSimd::splat((ArchSimd::<f32>::LANES as u32).wrapping_mul(self.random_gen.channel_seed as u32));
+
+        const BYTE_SHUFFLE: [u8; 64] = [
+            3,0,2,1, 7,4,6,5, 11,8,10,9, 15,12,14,13,
+            3,0,2,1, 7,4,6,5, 11,8,10,9, 15,12,14,13,
+            3,0,2,1, 7,4,6,5, 11,8,10,9, 15,12,14,13,
+            3,0,2,1, 7,4,6,5, 11,8,10,9, 15,12,14,13,
+        ];
+
+        let shuffle_indices = ArchSimd::<u8>::load(&BYTE_SHUFFLE[..]);
+
+        let prime = ArchSimd::splat(0x85ebca6b_u32);
+        let x_shuf = x_vec.permute_8(shuffle_indices) ^ prime;
 
         // Temporary buffer to store indices for gradient values.
-        let mut grad_array = SimdArray::<u32, ROW_SIZE>::new_uninit();
+        let mut grad_array = SimdArray::<u32, 64>::new_uninit();
 
-        // Peel first vectorized mix.
-        let grad_vec: ArchSimd<u32> = self.random_gen.mix_i32_simd_pair(x_vec, y_vec) & ArchSimd::splat(0xF as u32);
-        grad_array.store_simd(0 as usize, grad_vec);
-        
         // Main vectorized bit mixing loop.
-        let lane_increment = ArchSimd::splat(ArchSimd::<f32>::LANES as i32);
-        for i in (ArchSimd::<f32>::LANES..y_num_loops as usize + 1).step_by(ArchSimd::<f32>::LANES) {
-            y_vec += lane_increment;
-            let grad_vec: ArchSimd<u32> = self.random_gen.mix_i32_simd_pair(x_vec, y_vec) & ArchSimd::splat(0xF as u32);
-            grad_array.store_simd(i as usize, grad_vec);
+        let end_index = y_num_loops as usize + 1;
+        for i in (0..end_index).step_by(ArchSimd::<f32>::LANES) {
+            let y_shuf = y_vec.permute_8(shuffle_indices) ^ prime;
+            let indices: ArchSimd<u32> = (x_shuf * y_shuf) >> 29;
+            grad_array.store_simd(i, indices);
+            y_vec += y_vec_stride;
         }
 
         let mut arrays = [
@@ -51,7 +61,6 @@ impl Perlin {
             let y_next_index: u32 = unsafe { y_next_index_exact.to_int_unchecked::<u32>().min(ROW_SIZE as u32) }; // Never negative or NaN.
             let set_amount: u32 = y_next_index - cur_index;
 
-            // Set all gradients at once with masked stores.
             unsafe {
                 let l = grad_array.get_unchecked(y_it as usize) as usize;
                 let r = grad_array.get_unchecked(y_it as usize + 1) as usize;
@@ -77,7 +86,7 @@ impl Perlin {
         right.y = right.y.mul_sub(*y_distances, right.y); // equivalent to -> right.y *= y_distances - 1.0
     }
 
-    #[inline(never)]
+    // #[inline(never)]
     pub(super) fn set_uniform_grid_gradients_3d (
         &mut self,
         lf: &mut PerlinVecTriple,

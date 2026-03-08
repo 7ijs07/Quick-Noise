@@ -6,6 +6,7 @@ use crate::simd::simd_vec::core::SimdVec;
 use std::fmt;
 use std::ops::*;
 use crate::simd::simd_traits::*;
+use crate::simd::array_trait::Array;
 
 // Universal Operations.
 impl<T: SimdElement, F: SimdFamily> SimdVec<T, F> {
@@ -28,7 +29,7 @@ impl<T: SimdElement, F: SimdFamily> SimdLoad<T> for SimdVec<T, F> {
         unsafe {
             let ptr = slice.as_ptr();
             // assert!(ptr.align_offset(Self::SIMD_WIDTH) == 0);
-            assert!(slice.len() >= Self::LANES);
+            debug_assert!(slice.len() >= Self::LANES);
             Self::new(F::Vec::load_aligned(ptr))
         }
     }
@@ -46,8 +47,8 @@ impl<T: SimdElement, F: SimdFamily> SimdStore<T> for SimdVec<T, F> {
     #[inline(always)]
     fn store_aligned(self, slice: &mut [T]) {
         let ptr = slice.as_mut_ptr();
-        assert!(ptr.align_offset(Self::SIMD_WIDTH) == 0);
-        assert!(slice.len() >= Self::LANES);
+        debug_assert!(ptr.align_offset(Self::SIMD_WIDTH) == 0);
+        debug_assert!(slice.len() >= Self::LANES);
         self.data.store_aligned(ptr);
     }
 
@@ -61,12 +62,15 @@ impl<T: SimdElement, F: SimdFamily> SimdStore<T> for SimdVec<T, F> {
     }
 }
 
-impl<T: SimdElement, F: SimdFamily> SimdToArray<T, {Self::LANES}> for SimdVec<T, F> {
+// TODO: Come up with solution without generic constants!!!!!!!!!!!!! For the fifteenth attempt.
+impl<T: SimdElement, F: SimdFamily> SimdToArray<T, F> for SimdVec<T, F> {
     #[inline(always)]
-    fn to_array(self) -> [T; Self::LANES] {
-        let mut array: [T; Self::LANES] = [T::default(); Self::LANES]; 
-        let mut slice = array.as_mut_slice();
-        self.store(&mut slice);
+    fn to_array(self) -> T::Array<F>
+    // where
+    //     <T as SimdElement>::SimdArray<F>: Into<[T; N]>
+    {
+        let mut array = T::Array::<F>::from_fn(|_| T::from(0).unwrap());
+        self.store(&mut array.as_mut_slice());
         array
     }
 }
@@ -75,15 +79,15 @@ impl<T: SimdElement, F: SimdFamily> SimdToArray<T, {Self::LANES}> for SimdVec<T,
 impl<T: SimdElement, F: SimdFamily> SimdIota<T> for SimdVec<T, F> {
     #[inline(always)]
     fn iota(offset: T) -> Self {
-        let iota_array: <T as SimdElement>::SimdArray::<F> = Array::<T>::from_fn(|i| <T as NumCast>::from(i).unwrap() + offset);
+        let iota_array = T::Array::<F>::from_fn(|i| <T as NumCast>::from(i).unwrap() + offset);
         Self::load(iota_array.as_slice())
     }
 }
 
-impl<T: SimdElement, F: SimdFamily> fmt::Debug for SimdVec<T, F> where [T; Self::LANES]: {
+impl<T: SimdElement, F: SimdFamily> fmt::Debug for SimdVec<T, F> where SimdVec<T, F>: SimdVecBasic<T, F> {
     #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let buf = self.to_array();
+        let buf= self.to_array();
         write!(f, "{:?}", buf)
     }
 }

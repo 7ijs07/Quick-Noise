@@ -1,6 +1,6 @@
 use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use fastnoise2::Node;
-use quick_noise::perlin::{Octave2D, Perlin, PerlinMap, PerlinVol};
+use quick_noise::perlin::{Octave2D, Octave3D, Perlin, PerlinMap, PerlinVol};
 const SCALES: [f32; 11] = [64.0, 48.0, 32.0, 24.0, 16.0, 12.0, 8.0, 6.0, 4.0, 3.0, 2.0];
 
 fn perlin_2d_benchmark(c: &mut Criterion) {
@@ -21,28 +21,56 @@ fn perlin_2d_benchmark(c: &mut Criterion) {
 
 fn perlin_2d_benchmark_batch(c: &mut Criterion) {
     let mut group = c.benchmark_group("perlin_noise_2d_batch");
-    for scale in SCALES {
-        group.throughput(Throughput::Elements(1024)); 
-        group.bench_function(format!("scale: {scale}"), |b| {
-            let mut perlin = Perlin::new(0);
-            let mut x_array = PerlinMap::new_uninit();
-            let mut y_array = PerlinMap::new_uninit();
-            let mut output = PerlinMap::new_uninit();
-            for x in 0..32 {
-                for y in 0..32 {
-                    x_array[x * 32 + y] = x as f32;
-                    y_array[x * 32 + y] = y as f32;
+    let scale = 32.0;
+    group.throughput(Throughput::Elements(1024)); 
+    group.bench_function(format!("scale: {scale}"), |b| {
+        let mut perlin = Perlin::new(0);
+        let mut x_array = PerlinMap::new_uninit();
+        let mut y_array = PerlinMap::new_uninit();
+        let mut output = PerlinMap::new_uninit();
+        for x in 0..32 {
+            for y in 0..32 {
+                x_array[x * 32 + y] = x as f32;
+                y_array[x * 32 + y] = y as f32;
+            }
+        }
+
+        let octave = Octave2D::splat(scale, 1.0);
+
+        b.iter(|| {
+            perlin.batched_2d(&mut output, &x_array, &y_array, &octave, 1.0, 1, 0.0)
+        });
+    });
+}
+
+fn perlin_3d_benchmark_batch(c: &mut Criterion) {
+    let mut group = c.benchmark_group("perlin_noise_3d_batch");
+    let scale = 32.0;
+    group.throughput(Throughput::Elements(32768)); 
+    group.bench_function(format!("scale: {scale}"), |b| {
+        let mut perlin = Perlin::new(0);
+        let mut x_array = PerlinVol::new_uninit();
+        let mut y_array = PerlinVol::new_uninit();
+        let mut z_array = PerlinVol::new_uninit();
+        let mut output = PerlinVol::new_uninit();
+        for x in 0..32 {
+            for y in 0..32 {
+                for z in 0..32 {
+                    x_array[x * 1024 + y * 32 + z] = x as f32;
+                    y_array[x * 1024 + y * 32 + z] = y as f32;
+                    z_array[x * 1024 + y * 32 + z] = z as f32;
                 }
             }
+        }
 
-            let octave = Octave2D::splat(scale, 1.0);
+        let octave = Octave3D::splat(scale, 1.0);
 
-            b.iter(|| {
-                perlin.batched_2d(&mut output, &x_array, &y_array, &octave, 1.0, 1, 0.0)
-            });
+        b.iter(|| {
+            perlin.batched_3d(&mut output, &x_array, &y_array, &z_array, &octave, 1.0, 1, 0.0)
         });
-    }
+    });
 }
+
 
 fn perlin_2d_benchmark_fn2(c: &mut Criterion) {
     let mut group = c.benchmark_group("perlin_noise_2d_fn2");
@@ -131,6 +159,6 @@ fn perlin_3d_benchmark_fn2(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, perlin_2d_benchmark, perlin_3d_benchmark, perlin_2d_benchmark_fn2, perlin_3d_benchmark_fn2);
-// criterion_group!(benches, perlin_2d_benchmark_batch, perlin_2d_benchmark_fn2);
+// criterion_group!(benches, perlin_2d_benchmark, perlin_3d_benchmark, perlin_2d_benchmark_fn2, perlin_3d_benchmark_fn2);
+criterion_group!(benches, perlin_3d_benchmark_fn2);
 criterion_main!(benches);

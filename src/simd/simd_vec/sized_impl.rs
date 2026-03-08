@@ -1,4 +1,5 @@
 use crate::simd::architectures::arch_impl::*;
+use crate::simd::array_trait::Array;
 use crate::simd::traits::*;
 use crate::simd::simd_vec::core::SimdVec;
 use crate::simd::simd_mask::core::SimdMask;
@@ -58,15 +59,32 @@ impl<T: SimdElement, F: SimdFamily> SimdMaskedStore<T, F> for SimdVec<T, F> {
 
 impl<T: SimdElement + SimdElement<BitWidthType = B32>, F: SimdFamily> SimdVec<T, F> {
     #[inline(always)]
-    pub fn runtime_permute(self, indices: SimdVec<u32, F>) -> Self {
+    pub fn permute_32(self, indices: SimdVec<u32, F>) -> Self {
         Self::new(self.data.permute_32(indices.data))
     }
 }
 
-impl<T: SimdElement + SimdElement<BitWidthType = B8>, F: SimdFamily> SimdVec<T, F> {
+impl<T: SimdElement, F: SimdFamily> SimdVec<T, F> {
     #[inline(always)]
-    pub fn runtime_permute_bytes(self, indices: Self) -> Self {
+    pub fn permute_8(self, indices: SimdVec<u8, F>) -> Self {
         Self::new(self.data.permute_8(indices.data))
+    }
+
+    #[inline(always)]
+    pub fn permute_8_pattern_32(self, indices: [u8; 4]) -> Self {
+        let pattern = u32::from_ne_bytes(indices);
+        let pattern_vec = SimdVec::<u32, F>::splat(pattern);
+        Self::new(self.data.permute_8(pattern_vec.data))
+    }
+}
+
+// TODO: Resolve this bound.
+impl<T: SimdElement + SimdElement<BitWidthType = B32>, F: SimdFamily> SimdBlend for SimdVec<T, F> 
+where
+    F::Vec: SimdVariableBlendImpl<MaskType = F::Mask>
+{
+    fn blend_32(self, other: Self, mask: SimdMask<T, F>) -> Self {
+        Self::new(self.data.vblend_32(other.data, mask.data))
     }
 }
 
@@ -75,7 +93,7 @@ impl<F: SimdFamily> SimdVec<u32, F> {
     pub fn gather<S: SimdElement + SimdElement<BitWidthType = B32>, const N: usize>(self, slice: &[S; N]) -> SimdVec<S, F> {
         if N <= Self::LANES {
             let data = SimdVec::<S, F>::load(&slice[..]);
-            data.runtime_permute(self)
+            data.permute_32(self)
         } else {
             SimdVec::new(self.data.gather_32_from_32::<S, 4>(slice.as_ptr()))
         }

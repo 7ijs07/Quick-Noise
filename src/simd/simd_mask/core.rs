@@ -15,7 +15,13 @@ pub struct SimdMask<T, F: SimdFamily> {
 }
 
 impl<T: SimdElement, F: SimdFamily> SimdMask<T, F> {
+    #[inline(always)]
     pub(crate) fn new(data: F::Mask) -> Self {
         Self { data, _marker: PhantomData }
+    }
+
+    #[inline(always)]
+    pub fn raw_cast<S: SimdElement>(self) -> SimdMask<S, F> {
+        SimdMask::new(self.data)
     }
 }

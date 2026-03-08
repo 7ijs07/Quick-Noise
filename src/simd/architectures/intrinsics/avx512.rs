@@ -101,9 +101,10 @@ impl SimdPermuteImpl for Avx512 {
 }
 
 impl SimdVariableBlendImpl for Avx512 {
-    fn vblend_64(self, other: Self, mask: Self) -> Self { self_from_op!(_mm512_mask_blend_pd, mask, self, other) }
-    fn vblend_32(self, other: Self, mask: Self) -> Self { self_from_op!(_mm512_mask_blend_ps, mask, self, other) }
-    fn vblend_8(self, other: Self, mask: Self) -> Self { self_from_op!(_mm512_mask_blend_epi8, mask, self, other) }
+    type MaskType = Avx512Mask;
+    fn vblend_64(self, other: Self, mask: Self::MaskType) -> Self { self_from_op!(_mm512_mask_blend_pd, mask, self, other) }
+    fn vblend_32(self, other: Self, mask: Self::MaskType) -> Self { self_from_op!(_mm512_mask_blend_ps, mask, self, other) }
+    fn vblend_8(self, other: Self, mask: Self::MaskType) -> Self { self_from_op!(_mm512_mask_blend_epi8, mask, self, other) }
 }
 
 impl SimdMulAddImpl for Avx512 {

@@ -94,9 +94,10 @@ impl SimdPermuteImpl for Sse {
 }
 
 impl SimdVariableBlendImpl for Sse {
-    #[inline(always)] fn vblend_64(self, other: Self, mask: Self) -> Self { self_from_op!(_mm_blendv_pd, self, other, mask) }
-    #[inline(always)] fn vblend_32(self, other: Self, mask: Self) -> Self { self_from_op!(_mm_blendv_ps, self, other, mask) }
-    #[inline(always)] fn vblend_8(self, other: Self, mask: Self) -> Self { self_from_op!(_mm_blendv_epi8, self, other, mask) }
+    type MaskType = Self;
+    #[inline(always)] fn vblend_64(self, other: Self, mask: Self::MaskType) -> Self { self_from_op!(_mm_blendv_pd, self, other, mask) }
+    #[inline(always)] fn vblend_32(self, other: Self, mask: Self::MaskType) -> Self { self_from_op!(_mm_blendv_ps, self, other, mask) }
+    #[inline(always)] fn vblend_8(self, other: Self, mask: Self::MaskType) -> Self { self_from_op!(_mm_blendv_epi8, self, other, mask) }
 }
 
 impl SimdMulAddImpl for Sse {

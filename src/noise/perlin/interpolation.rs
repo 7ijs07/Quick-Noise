@@ -226,13 +226,13 @@ impl Perlin {
 
             let y_tf_offset_vec = z_lerp.mul_add(y_trf - y_tlf, y_tlf) * y_weighted_increment_vec;
             let y_bf_offset_vec = z_lerp.mul_add(y_brf - y_blf, y_blf) * y_weighted_increment_vec;
-            let y_hi_offset_dif_vec = z_lerp.mul_add(y_trb - y_tlb, y_tlb).mul_add(y_weighted_increment_vec, -y_tf_offset_vec);
-            let y_lo_offset_dif_vec = z_lerp.mul_add(y_brb - y_blb, y_blb).mul_add(y_weighted_increment_vec, -y_bf_offset_vec);
+            let y_hi_offset_dif_vec = z_lerp.mul_add(y_trb - y_tlb, y_tlb).mul_sub(y_weighted_increment_vec, y_tf_offset_vec);
+            let y_lo_offset_dif_vec = z_lerp.mul_add(y_brb - y_blb, y_blb).mul_sub(y_weighted_increment_vec, y_bf_offset_vec);
 
             let tf_base_vec = z_lerp.mul_add(sum_prod_trf - sum_prod_tlf, sum_prod_tlf) * weight_vec;
             let bf_base_vec = z_lerp.mul_add(sum_prod_brf - sum_prod_blf, sum_prod_blf) * weight_vec;
-            let hi_base_dif_vec = z_lerp.mul_add(sum_prod_trb - sum_prod_tlb, sum_prod_tlb).mul_add(weight_vec, -tf_base_vec);
-            let lo_base_dif_vec = z_lerp.mul_add(sum_prod_brb - sum_prod_blb, sum_prod_blb).mul_add(weight_vec, -bf_base_vec);
+            let hi_base_dif_vec = z_lerp.mul_add(sum_prod_trb - sum_prod_tlb, sum_prod_tlb).mul_sub(weight_vec, tf_base_vec);
+            let lo_base_dif_vec = z_lerp.mul_add(sum_prod_brb - sum_prod_blb, sum_prod_blb).mul_sub(weight_vec, bf_base_vec);
 
             x_tf_offset.store_simd(z_it, x_tf_offset_vec);
             x_bf_offset.store_simd(z_it, x_bf_offset_vec);

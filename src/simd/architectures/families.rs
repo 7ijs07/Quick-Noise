@@ -3,7 +3,6 @@ use crate::simd::architectures::intrinsics::avx2::Avx2;
 use crate::simd::architectures::intrinsics::avx512::{Avx512, Avx512Mask};
 use crate::simd::architectures::intrinsics::sse::Sse;
 use std::fmt::Debug;
-use crate::simd::traits::Array;
 
 #[derive(Copy, Clone)]
 pub struct SseFamily;

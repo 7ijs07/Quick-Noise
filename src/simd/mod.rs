@@ -6,3 +6,4 @@ pub mod simd_vec;
 pub mod architectures;
 pub mod simd_mask;
 pub mod simd_traits;
+pub mod array_trait;
