@@ -74,31 +74,30 @@ fn perlin_3d_benchmark_batch(c: &mut Criterion) {
 
 fn perlin_2d_benchmark_fn2(c: &mut Criterion) {
     let mut group = c.benchmark_group("perlin_noise_2d_fn2");
-    for scale in SCALES {
-        group.throughput(Throughput::Elements(1024)); 
-        group.bench_function(format!("scale: {scale}"), |b| {
-            let node = Node::from_name("Perlin").unwrap();
-            let mut array = [0f32; 1024];
-            let mut i = 0;
-            let scale = 1f32 / scale as f32;
-            b.iter(|| {
-                i = i + 1 & 0xFFFFFF;
-                let offset = (i * 32) as f32;
-                unsafe {
-                    node.gen_uniform_grid_2d_unchecked(
-                        &mut array,
-                        offset,
-                        offset,
-                        32,
-                        32,
-                        scale,
-                        scale,
-                        0
-                    );
-                }
-            });
+    let scale = 32.0;
+    group.throughput(Throughput::Elements(1024)); 
+    group.bench_function(format!("scale: {scale}"), |b| {
+        let node = Node::from_name("Perlin").unwrap();
+        let mut array = [0f32; 1024];
+        let mut i = 0;
+        let scale = 1f32 / scale as f32;
+        b.iter(|| {
+            i = i + 1 & 0xFFFFFF;
+            let offset = (i * 32) as f32;
+            unsafe {
+                node.gen_uniform_grid_2d_unchecked(
+                    &mut array,
+                    offset,
+                    offset,
+                    32,
+                    32,
+                    scale,
+                    scale,
+                    0
+                );
+            }
         });
-    }
+    });
 }
 
 fn perlin_3d_benchmark(c: &mut Criterion) {
@@ -129,36 +128,35 @@ fn perlin_3d_benchmark(c: &mut Criterion) {
 
 fn perlin_3d_benchmark_fn2(c: &mut Criterion) {
     let mut group = c.benchmark_group("perlin_noise_3d_fn2");
-    for scale in SCALES {
-        group.throughput(Throughput::Elements(32768)); 
-        group.bench_function(format!("scale: {scale}"), |b| {
-            let node = Node::from_name("Perlin").unwrap();
-            let mut array = [0f32; 32768];
-            let mut i = 0;
-            let scale = 1f32 / scale as f32;
-            b.iter(|| {
-                i = i + 1 & 0xFFFFFF;
-                let offset = (i * 32) as f32;
-                unsafe {
-                    node.gen_uniform_grid_3d_unchecked(
-                        &mut array, 
-                        offset,
-                        offset,
-                        offset,
-                        32,
-                        32,
-                        32,
-                        scale,
-                        scale,
-                        scale,
-                        0
-                    );
-                }
-            });
+    let scale = 32.0;
+    group.throughput(Throughput::Elements(32768)); 
+    group.bench_function(format!("scale: {scale}"), |b| {
+        let node = Node::from_name("Perlin").unwrap();
+        let mut array = [0f32; 32768];
+        let mut i = 0;
+        let scale = 1f32 / scale as f32;
+        b.iter(|| {
+            i = i + 1 & 0xFFFFFF;
+            let offset = (i * 32) as f32;
+            unsafe {
+                node.gen_uniform_grid_3d_unchecked(
+                    &mut array, 
+                    offset,
+                    offset,
+                    offset,
+                    32,
+                    32,
+                    32,
+                    scale,
+                    scale,
+                    scale,
+                    0
+                );
+            }
         });
-    }
+    });
 }
 
 // criterion_group!(benches, perlin_2d_benchmark, perlin_3d_benchmark, perlin_2d_benchmark_fn2, perlin_3d_benchmark_fn2);
-criterion_group!(benches, perlin_3d_benchmark_fn2);
+criterion_group!(benches, perlin_2d_benchmark_batch, perlin_2d_benchmark_fn2, perlin_3d_benchmark_batch, perlin_3d_benchmark_fn2);
 criterion_main!(benches);
