@@ -134,14 +134,14 @@ impl<T: SimdElement, F: SimdFamily> SimdPartialOrd for SimdVec<T, F> {
         SimdMask::new(match T::TYPE {
             SimdType::F64 => self.data.cmp_f64_ge(rhs.data),
             SimdType::F32 => self.data.cmp_f32_ge(rhs.data),
-            // SimdType::U64 => self.data.cmp_i64_gt(rhs.data).or(self.data.cmp_i64_eq(rhs.data)),
-            // SimdType::U32 => self.data.cmp_i32_gt(rhs.data).or(self.data.cmp_i32_eq(rhs.data)),
-            // SimdType::U16 => self.data.cmp_i16_gt(rhs.data).or(self.data.cmp_i16_eq(rhs.data)),
-            // SimdType::U8 => self.data.cmp_i8_gt(rhs.data).or(self.data.cmp_i8_eq(rhs.data)),
-            SimdType::I64 => self.data.cmp_i64_gt(rhs.data).or(self.data.cmp_i64_eq(rhs.data)),
-            SimdType::I32 => self.data.cmp_i32_gt(rhs.data).or(self.data.cmp_i32_eq(rhs.data)),
-            SimdType::I16 => self.data.cmp_i16_gt(rhs.data).or(self.data.cmp_i16_eq(rhs.data)),
-            SimdType::I8 => self.data.cmp_i8_gt(rhs.data).or(self.data.cmp_i8_eq(rhs.data)),
+            SimdType::U64 => self.data.cmp_i64_gt(rhs.data).or(self.data.cmp_i64_eq(rhs.data)),
+            SimdType::U32 => self.data.cmp_i32_gt(rhs.data).or(self.data.cmp_i32_eq(rhs.data)),
+            SimdType::U16 => self.data.cmp_i16_gt(rhs.data).or(self.data.cmp_i16_eq(rhs.data)),
+            SimdType::U8 => self.data.cmp_i8_gt(rhs.data).or(self.data.cmp_i8_eq(rhs.data)),
+            // SimdType::I64 => self.data.cmp_i64_gt(rhs.data).or(self.data.cmp_i64_eq(rhs.data)),
+            // SimdType::I32 => self.data.cmp_i32_gt(rhs.data).or(self.data.cmp_i32_eq(rhs.data)),
+            // SimdType::I16 => self.data.cmp_i16_gt(rhs.data).or(self.data.cmp_i16_eq(rhs.data)),
+            // SimdType::I8 => self.data.cmp_i8_gt(rhs.data).or(self.data.cmp_i8_eq(rhs.data)),
             _ => unreachable!() // TODO: Add integer types .
         })
     }
