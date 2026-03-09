@@ -155,15 +155,15 @@ impl<T: SimdElement, const N: usize> SimdArray<T, N> {
     #[inline(always)]
     pub fn load_simd(&self, index: usize) -> ArchSimd<T> {
         debug_assert!(index + ArchSimd::<T>::LANES <= N);
-        debug_assert!(index % ArchSimd::<T>::LANES == 0);
-        unsafe { ArchSimd::load_aligned(&self.data.assume_init_ref().get_unchecked(index..)) }
+        // debug_assert!(index % ArchSimd::<T>::LANES == 0);
+        unsafe { ArchSimd::load(&self.data.assume_init_ref().get_unchecked(index..)) }
     }
 
     #[inline(always)]
     pub fn store_simd(&mut self, index: usize, vec: ArchSimd<T>) {
         debug_assert!(index + ArchSimd::<T>::LANES <= N);
-        debug_assert!(index % ArchSimd::<T>::LANES == 0);
-        unsafe { vec.store_aligned(&mut self.data.assume_init_mut().get_unchecked_mut(index..)); }
+        // debug_assert!(index % ArchSimd::<T>::LANES == 0);
+        unsafe { vec.store(&mut self.data.assume_init_mut().get_unchecked_mut(index..)); }
     }
 
     #[inline(always)]
@@ -209,20 +209,22 @@ impl<T: SimdElement, const N: usize> SimdArray<T, N> {
     pub fn multiset_many<const M: usize>(arrays: &mut [&mut Self; M], values: &[T; M], mut index: usize, mut amount: isize) {
         let vecs: [ArchSimd<T>; M] = std::array::from_fn(|i| ArchSimd::<T>::splat(values[i]));
 
-        let indices = ArchSimd::load(&std::array::from_fn::<i32, N, _>(|i| i as i32));
-        
-        // TODO: Make masks work natively different types.
         while amount > 0 {
-            let amounts = ArchSimd::splat(amount as i32);
-            let mask = amounts.simd_gt(indices);
+            if amount >= ArchSimd::<T>::LANES as isize {
+                for i in 0..M {
+                    unsafe { arrays[i].store_simd(index, *vecs.get_unchecked(i)); }
+                }
+            } else {
+                let iota = ArchSimd::<i32>::iota(0);
+                let amounts = ArchSimd::splat(ArchSimd::<T>::LANES as i32 - amount as i32);
+                let mask = iota.simd_ge(amounts);
+                let tail_index = N - ArchSimd::<T>::LANES;
 
-            // println!("amounts: {:?}", amounts);
-            // println!("indices: {:?}", indices);
-
-            for i in 0..M {
-                debug_assert!(i < M);
-                unsafe { arrays[i].masked_store_simd(index, *vecs.get_unchecked(i), mask.raw_cast()); }
+                for i in 0..M {
+                    unsafe { arrays[i].masked_store_simd(tail_index, *vecs.get_unchecked(i), mask.raw_cast()); }
+                }
             }
+
             amount -= ArchSimd::<T>::LANES as isize;
             index += ArchSimd::<T>::LANES;
         }
