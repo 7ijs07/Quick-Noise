@@ -1,0 +1,94 @@
+use crate::value::Value;
+use crate::simd::simd_array::SimdArray;
+use crate::simd::arch_simd::{ArchSimd};
+use crate::simd::simd_traits::*;
+
+impl Value {
+    pub fn batched_2d(
+        &mut self,
+        output: &mut SimdArray<f32, 1024>,
+        x_array: &SimdArray<f32, 1024>,
+        y_array: &SimdArray<f32, 1024>,
+        freq: f32,
+        weight_coef: f32,
+        channel_seed: u64,
+        octave_offset: f32,
+    ) {
+        // Constants.
+        let neg_two: ArchSimd<f32> = ArchSimd::splat(-2.0);
+        let three: ArchSimd<f32> = ArchSimd::splat(3.0);
+
+        let hash_mask: ArchSimd<u32> = ArchSimd::splat(0x007FFFFF);
+        let exp_bits: ArchSimd<u32> = ArchSimd::splat(0x40000000);
+
+        // Hash constants.
+        const BYTE_SHUFFLE: [u8; 64] = [
+            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+        ];
+        let shuffle_indices = ArchSimd::<u8>::load(&BYTE_SHUFFLE[..]);
+        let channel_seed = ArchSimd::splat(self.random_gen.channel_seed as u32);
+        let prime = ArchSimd::splat(0x85ebca6b_u32 as u32);
+    
+        // Frequency constant.
+        let freq = ArchSimd::<f32>::splat(freq);
+
+        for i in (0..1024).step_by(ArchSimd::<f32>::LANES) {
+
+            // Load and scale: 4
+            let x_vec = x_array.load_simd(i);
+            let y_vec = y_array.load_simd(i);
+
+            let x_scaled = x_vec * freq;
+            let y_scaled = y_vec * freq;
+
+            // Gridpoints and distances: 6
+            let x_scaled_floored = x_scaled.floor();
+            let y_scaled_floored = y_scaled.floor();
+
+            let x_grid_lo = x_scaled_floored.cast_int_trunc();
+            let y_grid_lo = y_scaled_floored.cast_int_trunc();
+
+            let x_dist_lo = x_scaled - x_scaled_floored;
+            let y_dist_lo = y_scaled - y_scaled_floored;
+
+            // Lerp fade calculation: 6
+            let t = x_dist_lo;
+            let s = y_dist_lo;
+            let x_lerp = t * t * t.mul_add(neg_two, three);
+            let y_lerp = s * s * s.mul_add(neg_two, three);
+
+            // Hash: 20
+            let x1: ArchSimd<u32> = x_grid_lo.raw_cast() * channel_seed;
+            let y1: ArchSimd<u32> = y_grid_lo.raw_cast() * channel_seed;
+            let x2 = x1 + channel_seed;
+            let y2 = y1 + channel_seed;
+
+            let x1_shuf = x1.permute_8(shuffle_indices) ^ prime;
+            let y1_shuf = y1.permute_8(shuffle_indices) ^ prime;
+            let x2_shuf = x2.permute_8(shuffle_indices) ^ prime;
+            let y2_shuf = y2.permute_8(shuffle_indices) ^ prime;
+
+            let hash_tl = x1_shuf * y1_shuf ^ x1_shuf;
+            let hash_tr = x1_shuf * y2_shuf ^ x1_shuf;
+            let hash_bl = x2_shuf * y1_shuf ^ x2_shuf;
+            let hash_br = x2_shuf * y2_shuf ^ x2_shuf;
+            
+            // Values: 12
+            let val_tl = ((hash_tl & hash_mask) | exp_bits).raw_cast::<f32>() - three;
+            let val_tr = ((hash_tr & hash_mask) | exp_bits).raw_cast::<f32>() - three;
+            let val_bl = ((hash_bl & hash_mask) | exp_bits).raw_cast::<f32>() - three;
+            let val_br = ((hash_br & hash_mask) | exp_bits).raw_cast::<f32>() - three;
+
+            // Interpolation: 6
+            let top_lerp = y_lerp.mul_add(val_tr - val_tl, val_tl);
+            let bottom_lerp = y_lerp.mul_add(val_br - val_bl, val_bl);
+            let result = x_lerp.mul_add(bottom_lerp - top_lerp, top_lerp);
+
+            // Store: 1
+            output.store_simd(i, result);
+        }
+    }
+}

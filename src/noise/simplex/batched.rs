@@ -1,5 +1,3 @@
-use image::imageops::FilterType::Triangle;
-
 use crate::simplex::Simplex;
 use crate::simd::simd_array::SimdArray;
 use crate::simd::arch_simd::{ArchSimd};
@@ -127,10 +125,10 @@ impl Simplex {
             let x2_shuf = x2.permute_8(shuffle_indices) ^ prime;
             let y2_shuf = y2.permute_8(shuffle_indices) ^ prime;
 
-            let mix_lo = x1_shuf * y1_shuf;
-            let mix_mi_1 = x1_shuf * y2_shuf;
-            let mix_mi_2 = x2_shuf * y1_shuf;
-            let mix_hi = x2_shuf * y2_shuf;
+            let mix_lo = (x1_shuf * y1_shuf) ^ x1_shuf;
+            let mix_mi_1 = (x1_shuf * y2_shuf) ^ x1_shuf;
+            let mix_mi_2 = (x2_shuf * y1_shuf) ^ x2_shuf;
+            let mix_hi = (x2_shuf * y2_shuf) ^ x2_shuf;
 
             let mix_mi = mix_mi_1.blend_32(mix_mi_2, triangle_mask.raw_cast());
 

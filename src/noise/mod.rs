@@ -18,3 +18,9 @@ pub mod simplex {
     mod batched;
     pub use core::Simplex;
 }
+
+pub mod value {
+    mod core;
+    mod batched;
+    pub use core::Value;
+}

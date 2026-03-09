@@ -45,13 +45,18 @@ techniques such as domain warping. Results are measured in millions of points pe
 
 |   Library   | 2D Perlin AVX2 | 3D Perlin AVX2 |
 |-------------|----------------|----------------|
-| Quick-Noise | 980 M/s        | 304 M/s        |
+| Quick-Noise | 919 M/s        | 304 M/s        |
 | FastNoise2  | 509 M/s        | 224 M/s        |
 
 |   Library   | 2D Simplex AVX2 |
 |-------------|-----------------|
-| Quick-Noise | 654 M/s         |
+| Quick-Noise | 638 M/s         |
 | FastNoise2  | 425 M/s         |
+
+|   Library   | 2D Value AVX2   |
+|-------------|-----------------|
+| Quick-Noise | 1,080 M/s       |
+| FastNoise2  | 704 M/s         |
 
 # Running
 

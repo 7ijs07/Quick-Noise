@@ -78,10 +78,10 @@ impl Perlin {
             let x2_shuf = x2.permute_8(shuffle_indices) ^ prime;
             let y2_shuf = y2.permute_8(shuffle_indices) ^ prime;
 
-            let mix_tl = x1_shuf * y1_shuf;
-            let mix_tr = x1_shuf * y2_shuf;
-            let mix_bl = x2_shuf * y1_shuf;
-            let mix_br = x2_shuf * y2_shuf;
+            let mix_tl = (x1_shuf * y1_shuf) ^ x1_shuf;
+            let mix_tr = (x1_shuf * y2_shuf) ^ x1_shuf;
+            let mix_bl = (x2_shuf * y1_shuf) ^ x2_shuf;
+            let mix_br = (x2_shuf * y2_shuf) ^ x2_shuf;
 
             // Permute Gather: 12
             let indices_tl = mix_tl >> 29;
