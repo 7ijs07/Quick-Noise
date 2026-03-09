@@ -163,6 +163,35 @@ impl<T: SimdElement, F: SimdFamily> SimdPartialOrd for SimdVec<T, F> {
             _ => unreachable!() // TODO: Add integer types .
         })
     }
+
+    // TODO: Handle max for U64/I64.
+    fn max(self, rhs: Self) -> Self {
+        Self::new(match T::TYPE {
+            SimdType::F64 => self.data.max_f64(rhs.data),
+            SimdType::F32 => self.data.max_f32(rhs.data),
+            SimdType::I32 => self.data.max_i32(rhs.data),
+            SimdType::I16 => self.data.max_i16(rhs.data),
+            SimdType::I8 => self.data.max_i8(rhs.data),
+            SimdType::U32 => self.data.max_u32(rhs.data),
+            SimdType::U16 => self.data.max_u16(rhs.data),
+            SimdType::U8 => self.data.max_u8(rhs.data),
+            _ => panic!("Max for U64/I64 not implemented!")
+        })
+    }
+
+    fn min(self, rhs: Self) -> Self {
+        Self::new(match T::TYPE {
+            SimdType::F64 => self.data.min_f64(rhs.data),
+            SimdType::F32 => self.data.min_f32(rhs.data),
+            SimdType::I32 => self.data.min_i32(rhs.data),
+            SimdType::I16 => self.data.min_i16(rhs.data),
+            SimdType::I8 => self.data.min_i8(rhs.data),
+            SimdType::U32 => self.data.min_u32(rhs.data),
+            SimdType::U16 => self.data.min_u16(rhs.data),
+            SimdType::U8 => self.data.min_u8(rhs.data),
+            _ => panic!("Min for U64/I64 not implemented!")
+        })
+    }
 }
 
 // === Casts ===

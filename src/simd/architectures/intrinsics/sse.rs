@@ -120,7 +120,7 @@ impl SimdRoundImpl for Sse {
     #[inline(always)] fn ceil_f32(self) -> Self { self_from_const_op!(_mm_round_ps, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC, self) }
 }
 
-impl SimdOrdImpl for Sse {
+impl SimdPartialOrdImpl for Sse {
     type MaskType = Self;
     #[inline(always)] fn cmp_f64_eq(self, rhs: Self) -> Self { self_from_const_op!(_mm_cmp_pd, _CMP_EQ_OQ, self, rhs) }
     #[inline(always)] fn cmp_f64_lt(self, rhs: Self) -> Self { self_from_const_op!(_mm_cmp_pd, _CMP_LT_OQ, self, rhs) }
@@ -142,6 +142,23 @@ impl SimdOrdImpl for Sse {
     #[inline(always)] fn cmp_i16_gt(self, rhs: Self) -> Self { self_from_op!(_mm_cmpgt_epi16, self, rhs) }
     #[inline(always)] fn cmp_i8_eq(self, rhs: Self) -> Self { self_from_op!(_mm_cmpeq_epi8, self, rhs) }
     #[inline(always)] fn cmp_i8_gt(self, rhs: Self) -> Self { self_from_op!(_mm_cmpgt_epi8, self, rhs) }
+
+    #[inline(always)] fn max_f64(self, rhs: Self) -> Self { self_from_op!(_mm_max_pd, self, rhs) }
+    #[inline(always)] fn min_f64(self, rhs: Self) -> Self { self_from_op!(_mm_min_pd, self, rhs) }
+    #[inline(always)] fn max_f32(self, rhs: Self) -> Self { self_from_op!(_mm_max_ps, self, rhs) }
+    #[inline(always)] fn min_f32(self, rhs: Self) -> Self { self_from_op!(_mm_min_ps, self, rhs) }
+    #[inline(always)] fn max_i32(self, rhs: Self) -> Self { self_from_op!(_mm_max_epi32, self, rhs) }
+    #[inline(always)] fn min_i32(self, rhs: Self) -> Self { self_from_op!(_mm_min_epi32, self, rhs) }
+    #[inline(always)] fn max_i16(self, rhs: Self) -> Self { self_from_op!(_mm_max_epi16, self, rhs) }
+    #[inline(always)] fn min_i16(self, rhs: Self) -> Self { self_from_op!(_mm_min_epi16, self, rhs) }
+    #[inline(always)] fn max_i8(self, rhs: Self) -> Self { self_from_op!(_mm_max_epi8, self, rhs) }
+    #[inline(always)] fn min_i8(self, rhs: Self) -> Self { self_from_op!(_mm_min_epi8, self, rhs) }
+    #[inline(always)] fn max_u32(self, rhs: Self) -> Self { self_from_op!(_mm_max_epu32, self, rhs) }
+    #[inline(always)] fn min_u32(self, rhs: Self) -> Self { self_from_op!(_mm_min_epu32, self, rhs) }
+    #[inline(always)] fn max_u16(self, rhs: Self) -> Self { self_from_op!(_mm_max_epu16, self, rhs) }
+    #[inline(always)] fn min_u16(self, rhs: Self) -> Self { self_from_op!(_mm_min_epu16, self, rhs) }
+    #[inline(always)] fn max_u8(self, rhs: Self) -> Self { self_from_op!(_mm_max_epu8, self, rhs) }
+    #[inline(always)] fn min_u8(self, rhs: Self) -> Self { self_from_op!(_mm_min_epu8, self, rhs) }
 }
 
 // TODO: Make a custom trait for handling this transmutation into i*.

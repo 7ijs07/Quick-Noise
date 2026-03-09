@@ -8,7 +8,7 @@ pub trait SimdFamily: Clone + Copy {
     type Vec: SimdArch + Copy + Clone +
         SimdLoadImpl<MaskType = Self::Mask> +
         SimdStoreImpl<MaskType = Self::Mask> +
-        SimdOrdImpl<MaskType = Self::Mask>;
+        SimdPartialOrdImpl<MaskType = Self::Mask>;
         // SimdPermuteImpl<BlockVec = <Self::BlockFamily as SimdFamily>::Vec>;
     type Mask: MaskArch + Copy + Clone;
 
@@ -122,7 +122,7 @@ pub trait SimdArch:
     SimdVariableBlendImpl +
     SimdMulAddImpl +
     SimdRoundImpl +
-    SimdOrdImpl +
+    SimdPartialOrdImpl +
     SimdSplatImpl +
     SimdGatherImpl +
 {}
@@ -262,7 +262,7 @@ pub trait SimdRoundImpl {
     fn ceil_f32(self) -> Self;
 }
 
-pub trait SimdOrdImpl {
+pub trait SimdPartialOrdImpl {
     type MaskType;
     fn cmp_f64_eq(self, rhs: Self) -> Self::MaskType;
     fn cmp_f64_lt(self, rhs: Self) -> Self::MaskType;
@@ -284,6 +284,23 @@ pub trait SimdOrdImpl {
     fn cmp_i16_gt(self, rhs: Self) -> Self::MaskType;
     fn cmp_i8_eq(self, rhs: Self) -> Self::MaskType;
     fn cmp_i8_gt(self, rhs: Self) -> Self::MaskType;
+
+    fn max_f64(self, rhs: Self) -> Self;
+    fn min_f64(self, rhs: Self) -> Self;
+    fn max_f32(self, rhs: Self) -> Self;
+    fn min_f32(self, rhs: Self) -> Self;
+    fn max_i32(self, rhs: Self) -> Self;
+    fn min_i32(self, rhs: Self) -> Self;
+    fn max_i16(self, rhs: Self) -> Self;
+    fn min_i16(self, rhs: Self) -> Self;
+    fn max_i8(self, rhs: Self) -> Self;
+    fn min_i8(self, rhs: Self) -> Self;
+    fn max_u32(self, rhs: Self) -> Self;
+    fn min_u32(self, rhs: Self) -> Self;
+    fn max_u16(self, rhs: Self) -> Self;
+    fn min_u16(self, rhs: Self) -> Self;
+    fn max_u8(self, rhs: Self) -> Self;
+    fn min_u8(self, rhs: Self) -> Self;
 }
 
 pub trait SimdSplatImpl {

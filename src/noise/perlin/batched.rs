@@ -97,7 +97,8 @@ impl Perlin {
             let y_grads_bl = indices_bl.gather(&Y_GRADIENTS_2D);
             let x_grads_br = indices_br.gather(&X_GRADIENTS_2D);
             let y_grads_br = indices_br.gather(&Y_GRADIENTS_2D);
-
+            
+            // Interpolation: 14
             let prod_tl = x_grads_tl.mul_add(x_dist_lo, y_grads_tl * y_dist_lo);
             let prod_tr = x_grads_tr.mul_add(x_dist_lo, y_grads_tr * y_dist_hi);
             let top_lerp = y_lerp.mul_add(prod_tr - prod_tl, prod_tl);
@@ -108,17 +109,6 @@ impl Perlin {
 
             let result = x_lerp.mul_add(bottom_lerp - top_lerp, top_lerp);
 
-            // // Interpolation: 14
-            // let prod_tl = x_grads_tl.mul_add(x_dist_lo, y_grads_tl * y_dist_lo);
-            // let prod_tr = x_grads_tr.mul_add(x_dist_lo, y_grads_tr * y_dist_hi);
-            // let top_lerp = y_lerp.mul_add(prod_tr - prod_tl, prod_tl);
-
-            // let prod_bl = x_grads_bl.mul_add(x_dist_hi, y_grads_bl * y_dist_lo);
-            // let prod_br = x_grads_br.mul_add(x_dist_hi, y_grads_br * y_dist_hi);
-            // let bottom_lerp = y_lerp.mul_add(prod_br - prod_bl, prod_bl);
-
-            // let result = x_lerp.mul_add(bottom_lerp - top_lerp, top_lerp);
-            
             // Store: 1
             output.store_simd(i, result);
         }
@@ -231,7 +221,7 @@ impl Perlin {
             let mix_blb = x2_shuf * y1_shuf ^ z2_shuf;
             let mix_brb = x2_shuf * y2_shuf ^ z2_shuf;
 
-            // Products: 176
+            // Products: 88
             let indices_tlf = (mix_tlf >> 28) << 1;
             let indices_trf = (mix_trf >> 28) << 1;
             let indices_blf = (mix_blf >> 28) << 1;
@@ -266,7 +256,7 @@ impl Perlin {
             let z_grads_blb = ((c3 >> indices_blb) & three_int).gather(&GRAD_TABLE);
             let z_grads_brb = ((c3 >> indices_brb) & three_int).gather(&GRAD_TABLE);
 
-            // Interpolation: 30
+            // Interpolation: 38
             let prod_tlf = x_grads_tlf.mul_add(x_dist_lo, y_grads_tlf.mul_add(y_dist_lo, z_grads_tlf * z_dist_lo));
             let prod_trf = x_grads_trf.mul_add(x_dist_lo, y_grads_trf.mul_add(y_dist_lo, z_grads_trf * z_dist_hi));
             let prod_blf = x_grads_blf.mul_add(x_dist_lo, y_grads_blf.mul_add(y_dist_hi, z_grads_blf * z_dist_lo));

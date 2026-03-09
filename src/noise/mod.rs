@@ -12,3 +12,9 @@ pub mod perlin {
     pub use constants::{ROW_SIZE, MAP_SIZE, VOL_SIZE, PerlinMap, PerlinVol};
     pub use containers::{Octave2D, Octave3D};
 }
+
+pub mod simplex {
+    mod core;
+    mod batched;
+    pub use core::Simplex;
+}

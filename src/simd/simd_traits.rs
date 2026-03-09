@@ -101,6 +101,9 @@ pub trait SimdPartialOrd: SimdContext {
     fn simd_le(self, rhs: Self) -> SimdMask<Self::Element, Self::Family>;
     fn simd_gt(self, rhs: Self) -> SimdMask<Self::Element, Self::Family>;
     fn simd_ge(self, rhs: Self) -> SimdMask<Self::Element, Self::Family>;
+
+    fn max(self, rhs: Self) -> Self;
+    fn min(self, rhs: Self) -> Self;
 }
 
 pub trait SimdBlend: SimdContext {
