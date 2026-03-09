@@ -204,20 +204,76 @@ impl<T: SimdElement, const N: usize> Neg for SimdArray<T, N> {
 
 // === Additional Operations ===
 
+// impl<T: SimdElement, const N: usize> SimdArray<T, N> {
+//     #[inline(always)]
+//     pub fn multiset_many<const M: usize>(arrays: &mut [&mut Self; M], values: &[T; M], mut index: usize, mut amount: isize) {
+//         let vecs: [ArchSimd<T>; M] = std::array::from_fn(|i| ArchSimd::<T>::splat(values[i]));
+
+//         let indices = ArchSimd::load(&std::array::from_fn::<i32, N, _>(|i| i as i32));
+        
+//         // TODO: Make masks work natively different types.
+//         while amount > 0 {
+//             let amounts = ArchSimd::splat(amount as i32);
+//             let mask = amounts.simd_gt(indices);
+
+//             // println!("amounts: {:?}", amounts);
+//             // println!("indices: {:?}", indices);
+
+//             for i in 0..M {
+//                 debug_assert!(i < M);
+//                 unsafe { arrays[i].masked_store_simd(index, *vecs.get_unchecked(i), mask.raw_cast()); }
+//             }
+//             amount -= ArchSimd::<T>::LANES as isize;
+//             index += ArchSimd::<T>::LANES;
+//         }
+//     }
+// }
+
+// impl<T: SimdElement, const N: usize> SimdArray<T, N> {
+//     #[inline(always)]
+//     pub fn multiset_many<const M: usize>(arrays: &mut [&mut Self; M], values: &[T; M], mut index: usize, mut amount: isize) {
+//         let vecs: [ArchSimd<T>; M] = std::array::from_fn(|i| ArchSimd::<T>::splat(values[i]));
+
+//         let indices = ArchSimd::load(&std::array::from_fn::<i32, N, _>(|i| i as i32));
+        
+//         // TODO: Make masks work natively different types.
+//         while amount > 0 {
+//             if amount >= ArchSimd::<T>::LANES as isize {
+//                 for i in 0..M {
+//                     unsafe { arrays[i].store_simd(index, *vecs.get_unchecked(i)); }
+//                 }
+//             } else {
+//                 let amounts = ArchSimd::splat(amount as i32);
+//                 let mask = amounts.simd_gt(indices);
+
+//                 // println!("amounts: {:?}", amounts);
+//                 // println!("indices: {:?}", indices);
+
+//                 for i in 0..M {
+//                     debug_assert!(i < M);
+//                     unsafe { arrays[i].masked_store_simd(index, *vecs.get_unchecked(i), mask.raw_cast()); }
+//                 }
+//             }
+//             amount -= ArchSimd::<T>::LANES as isize;
+//             index += ArchSimd::<T>::LANES;
+//         }
+//     }
+// }
+
 impl<T: SimdElement, const N: usize> SimdArray<T, N> {
     #[inline(always)]
     pub fn multiset_many<const M: usize>(arrays: &mut [&mut Self; M], values: &[T; M], mut index: usize, mut amount: isize) {
         let vecs: [ArchSimd<T>; M] = std::array::from_fn(|i| ArchSimd::<T>::splat(values[i]));
 
         while amount > 0 {
-            if amount >= ArchSimd::<T>::LANES as isize {
+            if index < N - ArchSimd::<T>::LANES {
                 for i in 0..M {
                     unsafe { arrays[i].store_simd(index, *vecs.get_unchecked(i)); }
                 }
             } else {
-                let iota = ArchSimd::<i32>::iota(0);
-                let amounts = ArchSimd::splat(ArchSimd::<T>::LANES as i32 - amount as i32);
-                let mask = iota.simd_ge(amounts);
+                let iota = ArchSimd::<i32>::iota(N as i32 - ArchSimd::<T>::LANES as i32);
+                let indices = ArchSimd::splat(index as i32);
+                let mask = iota.simd_ge(indices);
                 let tail_index = N - ArchSimd::<T>::LANES;
 
                 for i in 0..M {

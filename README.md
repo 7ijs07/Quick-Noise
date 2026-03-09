@@ -29,13 +29,13 @@ Results are measured in billions of points per second single-threaded for one no
 
 | Scale | 2D Perlin AVX2 | 3D Perlin AVX2 | 2D Perlin AVX512 | 3D Perlin AVX512 |
 |-------|----------------|----------------|------------------|------------------|
-| 64    | 10.2 B/s       | 13.4 B/s       | 17.6 B/s         | 51.0 B/s         |
-| 48    | 9.08 B/s       | 12.7 B/s       | 15.4 B/s         | 42.5 B/s         |
-| 32    | 10.0 B/s       | 13.4 B/s       | 17.6 B/s         | 51.0 B/s         |
-| 24    | 7.77 B/s       | 11.3 B/s       | 12.8 B/s         | 32.7 B/s         |
-| 16    | 8.02 B/s       | 11.8 B/s       | 14.2 B/s         | 33.3 B/s         |
-| 8     | 5.34 B/s       | 7.82 B/s       | 8.74 B/s         | 20.9 B/s         |
-| 4     | 2.50 B/s       | 2.69 B/s       | 4.73 B/s         | 5.42 B/s         |
+| 64    | 10.3 B/s       | 13.5 B/s       | 17.6 B/s         | 51.0 B/s         |
+| 48    | 9.23 B/s       | 12.7 B/s       | 15.4 B/s         | 42.5 B/s         |
+| 32    | 10.3 B/s       | 13.5 B/s       | 17.6 B/s         | 51.0 B/s         |
+| 24    | 8.03 B/s       | 11.4 B/s       | 12.8 B/s         | 32.7 B/s         |
+| 16    | 8.12 B/s       | 11.9 B/s       | 14.2 B/s         | 33.3 B/s         |
+| 8     | 5.48 B/s       | 8.22 B/s       | 8.74 B/s         | 20.9 B/s         |
+| 4     | 2.82 B/s       | 3.20 B/s       | 4.73 B/s         | 5.42 B/s         |
 
 
 ## Batched
