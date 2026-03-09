@@ -143,10 +143,15 @@ impl Perlin {
         let zero: ArchSimd<f32> = ArchSimd::splat(0.0);
         let one_int: ArchSimd<u32> = ArchSimd::splat(1);
         let sixteen_int: ArchSimd<u32> = ArchSimd::splat(16);
+        let three_int: ArchSimd<u32> = ArchSimd::splat(3);
 
-        let c1: ArchSimd<u32> = ArchSimd::splat(0x30FF20AA);
-        let c2: ArchSimd<u32> = ArchSimd::splat(0xFF0FCA0C);
-        let c3: ArchSimd<u32> = ArchSimd::splat(0xCFF08CC0);
+        // let c1: ArchSimd<u32> = ArchSimd::splat(0x30FF20AA);
+        // let c2: ArchSimd<u32> = ArchSimd::splat(0xFF0FCA0C);
+        // let c3: ArchSimd<u32> = ArchSimd::splat(0xCFF08CC0);
+
+        let c1: ArchSimd<u32> = ArchSimd::splat(0x9009999);
+        let c2: ArchSimd<u32> = ArchSimd::splat(0xA59900A5);
+        let c3: ArchSimd<u32> = ArchSimd::splat(0x90A5A500);
 
         // Hash constants.
         const BYTE_SHUFFLE: [u8; 64] = [
@@ -154,6 +159,10 @@ impl Perlin {
             3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
             3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
             3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+        ];
+
+        const GRAD_TABLE: [f32; 4] = [
+            0.0, 1.0, -1.0, 0.0
         ];
 
         let shuffle_indices = ArchSimd::<u8>::load(&BYTE_SHUFFLE[..]);
@@ -223,124 +232,49 @@ impl Perlin {
             let mix_brb = x2_shuf * y2_shuf ^ z2_shuf;
 
             // Products: 176
-            let indices_tlf = mix_tlf >> 28;
-            let indices_trf = mix_trf >> 28;
-            let indices_blf = mix_blf >> 28;
-            let indices_brf = mix_brf >> 28;
-            let indices_tlb = mix_tlb >> 28;
-            let indices_trb = mix_trb >> 28;
-            let indices_blb = mix_blb >> 28;
-            let indices_brb = mix_brb >> 28;
+            let indices_tlf = (mix_tlf >> 28) << 1;
+            let indices_trf = (mix_trf >> 28) << 1;
+            let indices_blf = (mix_blf >> 28) << 1;
+            let indices_brf = (mix_brf >> 28) << 1;
+            let indices_tlb = (mix_tlb >> 28) << 1;
+            let indices_trb = (mix_trb >> 28) << 1;
+            let indices_blb = (mix_blb >> 28) << 1;
+            let indices_brb = (mix_brb >> 28) << 1;
 
-            let x_grads_tlf = c1 >> indices_tlf;
-            let x_grads_trf = c1 >> indices_trf;
-            let x_grads_blf = c1 >> indices_blf;
-            let x_grads_brf = c1 >> indices_brf;
-            let x_grads_tlb = c1 >> indices_tlb;
-            let x_grads_trb = c1 >> indices_trb;
-            let x_grads_blb = c1 >> indices_blb;
-            let x_grads_brb = c1 >> indices_brb;
-            let y_grads_tlf = c2 >> indices_tlf;
-            let y_grads_trf = c2 >> indices_trf;
-            let y_grads_blf = c2 >> indices_blf;
-            let y_grads_brf = c2 >> indices_brf;
-            let y_grads_tlb = c2 >> indices_tlb;
-            let y_grads_trb = c2 >> indices_trb;
-            let y_grads_blb = c2 >> indices_blb;
-            let y_grads_brb = c2 >> indices_brb;
-            let z_grads_tlf = c3 >> indices_tlf;
-            let z_grads_trf = c3 >> indices_trf;
-            let z_grads_blf = c3 >> indices_blf;
-            let z_grads_brf = c3 >> indices_brf;
-            let z_grads_tlb = c3 >> indices_tlb;
-            let z_grads_trb = c3 >> indices_trb;
-            let z_grads_blb = c3 >> indices_blb;
-            let z_grads_brb = c3 >> indices_brb;
-
-            let x_one_prod_tlf: ArchSimd<f32> = ((x_grads_tlf << 31) ^ x_dist_lo.raw_cast()).raw_cast();
-            let x_one_prod_trf: ArchSimd<f32> = ((x_grads_trf << 31) ^ x_dist_lo.raw_cast()).raw_cast();
-            let x_one_prod_blf: ArchSimd<f32> = ((x_grads_blf << 31) ^ x_dist_lo.raw_cast()).raw_cast();
-            let x_one_prod_brf: ArchSimd<f32> = ((x_grads_brf << 31) ^ x_dist_lo.raw_cast()).raw_cast();
-            let x_one_prod_tlb: ArchSimd<f32> = ((x_grads_tlb << 31) ^ x_dist_hi.raw_cast()).raw_cast();
-            let x_one_prod_trb: ArchSimd<f32> = ((x_grads_trb << 31) ^ x_dist_hi.raw_cast()).raw_cast();
-            let x_one_prod_blb: ArchSimd<f32> = ((x_grads_blb << 31) ^ x_dist_hi.raw_cast()).raw_cast();
-            let x_one_prod_brb: ArchSimd<f32> = ((x_grads_brb << 31) ^ x_dist_hi.raw_cast()).raw_cast();
-            let y_one_prod_tlf: ArchSimd<f32> = ((y_grads_tlf << 31) ^ y_dist_lo.raw_cast()).raw_cast();
-            let y_one_prod_trf: ArchSimd<f32> = ((y_grads_trf << 31) ^ y_dist_lo.raw_cast()).raw_cast();
-            let y_one_prod_blf: ArchSimd<f32> = ((y_grads_blf << 31) ^ y_dist_hi.raw_cast()).raw_cast();
-            let y_one_prod_brf: ArchSimd<f32> = ((y_grads_brf << 31) ^ y_dist_hi.raw_cast()).raw_cast();
-            let y_one_prod_tlb: ArchSimd<f32> = ((y_grads_tlb << 31) ^ y_dist_lo.raw_cast()).raw_cast();
-            let y_one_prod_trb: ArchSimd<f32> = ((y_grads_trb << 31) ^ y_dist_lo.raw_cast()).raw_cast();
-            let y_one_prod_blb: ArchSimd<f32> = ((y_grads_blb << 31) ^ y_dist_hi.raw_cast()).raw_cast();
-            let y_one_prod_brb: ArchSimd<f32> = ((y_grads_brb << 31) ^ y_dist_hi.raw_cast()).raw_cast();
-            let z_one_prod_tlf: ArchSimd<f32> = ((z_grads_tlf << 31) ^ z_dist_lo.raw_cast()).raw_cast();
-            let z_one_prod_trf: ArchSimd<f32> = ((z_grads_trf << 31) ^ z_dist_hi.raw_cast()).raw_cast();
-            let z_one_prod_blf: ArchSimd<f32> = ((z_grads_blf << 31) ^ z_dist_lo.raw_cast()).raw_cast();
-            let z_one_prod_brf: ArchSimd<f32> = ((z_grads_brf << 31) ^ z_dist_hi.raw_cast()).raw_cast();
-            let z_one_prod_tlb: ArchSimd<f32> = ((z_grads_tlb << 31) ^ z_dist_lo.raw_cast()).raw_cast();
-            let z_one_prod_trb: ArchSimd<f32> = ((z_grads_trb << 31) ^ z_dist_hi.raw_cast()).raw_cast();
-            let z_one_prod_blb: ArchSimd<f32> = ((z_grads_blb << 31) ^ z_dist_lo.raw_cast()).raw_cast();
-            let z_one_prod_brb: ArchSimd<f32> = ((z_grads_brb << 31) ^ z_dist_hi.raw_cast()).raw_cast();
-
-            let x_zero_mask_tlf = ((x_grads_tlf >> sixteen_int) & one_int).simd_eq(one_int);
-            let x_zero_mask_trf = ((x_grads_trf >> sixteen_int) & one_int).simd_eq(one_int);
-            let x_zero_mask_blf = ((x_grads_blf >> sixteen_int) & one_int).simd_eq(one_int);
-            let x_zero_mask_brf = ((x_grads_brf >> sixteen_int) & one_int).simd_eq(one_int);
-            let x_zero_mask_tlb = ((x_grads_tlb >> sixteen_int) & one_int).simd_eq(one_int);
-            let x_zero_mask_trb = ((x_grads_trb >> sixteen_int) & one_int).simd_eq(one_int);
-            let x_zero_mask_blb = ((x_grads_blb >> sixteen_int) & one_int).simd_eq(one_int);
-            let x_zero_mask_brb = ((x_grads_brb >> sixteen_int) & one_int).simd_eq(one_int);
-            let y_zero_mask_tlf = ((y_grads_tlf >> sixteen_int) & one_int).simd_eq(one_int);
-            let y_zero_mask_trf = ((y_grads_trf >> sixteen_int) & one_int).simd_eq(one_int);
-            let y_zero_mask_blf = ((y_grads_blf >> sixteen_int) & one_int).simd_eq(one_int);
-            let y_zero_mask_brf = ((y_grads_brf >> sixteen_int) & one_int).simd_eq(one_int);
-            let y_zero_mask_tlb = ((y_grads_tlb >> sixteen_int) & one_int).simd_eq(one_int);
-            let y_zero_mask_trb = ((y_grads_trb >> sixteen_int) & one_int).simd_eq(one_int);
-            let y_zero_mask_blb = ((y_grads_blb >> sixteen_int) & one_int).simd_eq(one_int);
-            let y_zero_mask_brb = ((y_grads_brb >> sixteen_int) & one_int).simd_eq(one_int);
-            let z_zero_mask_tlf = ((z_grads_tlf >> sixteen_int) & one_int).simd_eq(one_int);
-            let z_zero_mask_trf = ((z_grads_trf >> sixteen_int) & one_int).simd_eq(one_int);
-            let z_zero_mask_blf = ((z_grads_blf >> sixteen_int) & one_int).simd_eq(one_int);
-            let z_zero_mask_brf = ((z_grads_brf >> sixteen_int) & one_int).simd_eq(one_int);
-            let z_zero_mask_tlb = ((z_grads_tlb >> sixteen_int) & one_int).simd_eq(one_int);
-            let z_zero_mask_trb = ((z_grads_trb >> sixteen_int) & one_int).simd_eq(one_int);
-            let z_zero_mask_blb = ((z_grads_blb >> sixteen_int) & one_int).simd_eq(one_int);
-            let z_zero_mask_brb = ((z_grads_brb >> sixteen_int) & one_int).simd_eq(one_int);
-
-            let x_prod_tlf = zero.blend_32(x_one_prod_tlf, x_zero_mask_tlf.raw_cast());
-            let x_prod_trf = zero.blend_32(x_one_prod_trf, x_zero_mask_trf.raw_cast());
-            let x_prod_blf = zero.blend_32(x_one_prod_blf, x_zero_mask_blf.raw_cast());
-            let x_prod_brf = zero.blend_32(x_one_prod_brf, x_zero_mask_brf.raw_cast());
-            let x_prod_tlb = zero.blend_32(x_one_prod_tlb, x_zero_mask_tlb.raw_cast());
-            let x_prod_trb = zero.blend_32(x_one_prod_trb, x_zero_mask_trb.raw_cast());
-            let x_prod_blb = zero.blend_32(x_one_prod_blb, x_zero_mask_blb.raw_cast());
-            let x_prod_brb = zero.blend_32(x_one_prod_brb, x_zero_mask_brb.raw_cast());
-            let y_prod_tlf = zero.blend_32(y_one_prod_tlf, y_zero_mask_tlf.raw_cast());
-            let y_prod_trf = zero.blend_32(y_one_prod_trf, y_zero_mask_trf.raw_cast());
-            let y_prod_blf = zero.blend_32(y_one_prod_blf, y_zero_mask_blf.raw_cast());
-            let y_prod_brf = zero.blend_32(y_one_prod_brf, y_zero_mask_brf.raw_cast());
-            let y_prod_tlb = zero.blend_32(y_one_prod_tlb, y_zero_mask_tlb.raw_cast());
-            let y_prod_trb = zero.blend_32(y_one_prod_trb, y_zero_mask_trb.raw_cast());
-            let y_prod_blb = zero.blend_32(y_one_prod_blb, y_zero_mask_blb.raw_cast());
-            let y_prod_brb = zero.blend_32(y_one_prod_brb, y_zero_mask_brb.raw_cast());
-            let z_prod_tlf = zero.blend_32(z_one_prod_tlf, z_zero_mask_tlf.raw_cast());
-            let z_prod_trf = zero.blend_32(z_one_prod_trf, z_zero_mask_trf.raw_cast());
-            let z_prod_blf = zero.blend_32(z_one_prod_blf, z_zero_mask_blf.raw_cast());
-            let z_prod_brf = zero.blend_32(z_one_prod_brf, z_zero_mask_brf.raw_cast());
-            let z_prod_tlb = zero.blend_32(z_one_prod_tlb, z_zero_mask_tlb.raw_cast());
-            let z_prod_trb = zero.blend_32(z_one_prod_trb, z_zero_mask_trb.raw_cast());
-            let z_prod_blb = zero.blend_32(z_one_prod_blb, z_zero_mask_blb.raw_cast());
-            let z_prod_brb = zero.blend_32(z_one_prod_brb, z_zero_mask_brb.raw_cast());
+            let x_grads_tlf = ((c1 >> indices_tlf) & three_int).gather(&GRAD_TABLE);
+            let x_grads_trf = ((c1 >> indices_trf) & three_int).gather(&GRAD_TABLE);
+            let x_grads_blf = ((c1 >> indices_blf) & three_int).gather(&GRAD_TABLE);
+            let x_grads_brf = ((c1 >> indices_brf) & three_int).gather(&GRAD_TABLE);
+            let x_grads_tlb = ((c1 >> indices_tlb) & three_int).gather(&GRAD_TABLE);
+            let x_grads_trb = ((c1 >> indices_trb) & three_int).gather(&GRAD_TABLE);
+            let x_grads_blb = ((c1 >> indices_blb) & three_int).gather(&GRAD_TABLE);
+            let x_grads_brb = ((c1 >> indices_brb) & three_int).gather(&GRAD_TABLE);
+            let y_grads_tlf = ((c2 >> indices_tlf) & three_int).gather(&GRAD_TABLE);
+            let y_grads_trf = ((c2 >> indices_trf) & three_int).gather(&GRAD_TABLE);
+            let y_grads_blf = ((c2 >> indices_blf) & three_int).gather(&GRAD_TABLE);
+            let y_grads_brf = ((c2 >> indices_brf) & three_int).gather(&GRAD_TABLE);
+            let y_grads_tlb = ((c2 >> indices_tlb) & three_int).gather(&GRAD_TABLE);
+            let y_grads_trb = ((c2 >> indices_trb) & three_int).gather(&GRAD_TABLE);
+            let y_grads_blb = ((c2 >> indices_blb) & three_int).gather(&GRAD_TABLE);
+            let y_grads_brb = ((c2 >> indices_brb) & three_int).gather(&GRAD_TABLE);
+            let z_grads_tlf = ((c3 >> indices_tlf) & three_int).gather(&GRAD_TABLE);
+            let z_grads_trf = ((c3 >> indices_trf) & three_int).gather(&GRAD_TABLE);
+            let z_grads_blf = ((c3 >> indices_blf) & three_int).gather(&GRAD_TABLE);
+            let z_grads_brf = ((c3 >> indices_brf) & three_int).gather(&GRAD_TABLE);
+            let z_grads_tlb = ((c3 >> indices_tlb) & three_int).gather(&GRAD_TABLE);
+            let z_grads_trb = ((c3 >> indices_trb) & three_int).gather(&GRAD_TABLE);
+            let z_grads_blb = ((c3 >> indices_blb) & three_int).gather(&GRAD_TABLE);
+            let z_grads_brb = ((c3 >> indices_brb) & three_int).gather(&GRAD_TABLE);
 
             // Interpolation: 30
-            let prod_tlf = x_prod_tlf + y_prod_tlf + z_prod_tlf;
-            let prod_blf = x_prod_blf + y_prod_blf + z_prod_blf;
-            let prod_brf = x_prod_brf + y_prod_brf + z_prod_brf;
-            let prod_trf = x_prod_trf + y_prod_trf + z_prod_trf;
-            let prod_tlb = x_prod_tlb + y_prod_tlb + z_prod_tlb;
-            let prod_trb = x_prod_trb + y_prod_trb + z_prod_trb;
-            let prod_blb = x_prod_blb + y_prod_blb + z_prod_blb;
-            let prod_brb = x_prod_brb + y_prod_brb + z_prod_brb;
+            let prod_tlf = x_grads_tlf.mul_add(x_dist_lo, y_grads_tlf.mul_add(y_dist_lo, z_grads_tlf * z_dist_lo));
+            let prod_trf = x_grads_trf.mul_add(x_dist_lo, y_grads_trf.mul_add(y_dist_lo, z_grads_trf * z_dist_hi));
+            let prod_blf = x_grads_blf.mul_add(x_dist_lo, y_grads_blf.mul_add(y_dist_hi, z_grads_blf * z_dist_lo));
+            let prod_brf = x_grads_brf.mul_add(x_dist_lo, y_grads_brf.mul_add(y_dist_hi, z_grads_brf * z_dist_hi));
+            let prod_tlb = x_grads_tlb.mul_add(x_dist_hi, y_grads_tlb.mul_add(y_dist_lo, z_grads_tlb * z_dist_lo));
+            let prod_trb = x_grads_trb.mul_add(x_dist_hi, y_grads_trb.mul_add(y_dist_lo, z_grads_trb * z_dist_hi));
+            let prod_blb = x_grads_blb.mul_add(x_dist_hi, y_grads_blb.mul_add(y_dist_hi, z_grads_blb * z_dist_lo));
+            let prod_brb = x_grads_brb.mul_add(x_dist_hi, y_grads_brb.mul_add(y_dist_hi, z_grads_brb * z_dist_hi));
             
             let lerp_tf = z_lerp.mul_add(prod_trf - prod_tlf, prod_tlf);
             let lerp_bf = z_lerp.mul_add(prod_brf - prod_blf, prod_blf);

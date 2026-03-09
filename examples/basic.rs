@@ -23,7 +23,7 @@ fn main() {
 
     // unofficial_profiler::profile_perlin_2d_batched_call(1, 32.0, 2.0, 0.5);
     // grayscale::write_perlin_height_map_batched("noise_images/batched_pass.png", 32, 1, 1.0/32.0, 2.0, 0.5);
-    // grayscale::write_perlin_height_map_batched_3d("noise_images/batched_pass_3d.png", 32, 1, 1.0/32.0, 2.0, 0.5);
+    grayscale::write_perlin_height_map_batched_3d("noise_images/batched_pass_3d.png", 32, 1, 1.0/32.0, 2.0, 0.5);
 
     // grayscale::write_perlin_height_map_3d("noise_images/single_pass_3d.png", 32, 1, 32.0, 2.0, 0.5);
     // grayscale::write_perlin_height_map("noise_images/single_pass.png", 32, 1, 32.0, 2.0, 0.5);
