@@ -8,29 +8,14 @@ const SQRT_3: f32 = 1.7320508075688772935274;
 const SKEW: f32 = (SQRT_3 - 1.0) / 2.0;
 const UNSKEW: f32 = (3.0 - SQRT_3) / 6.0;
 
-const SCALED_SQRT: f32 = (SQRT_2 / 2.0) * 70.0;
-pub const X_GRADIENTS_2D: [f32; 8] = [
-    70.0,
-    SCALED_SQRT,
-    0.0,
-   -SCALED_SQRT,
-   -70.0,
-   -SCALED_SQRT,
-    0.0,
-    SCALED_SQRT,
-];
+const SCALE: f32 = 80.0;
+const SCALED_SQRT: f32 = (SQRT_2 / 2.0) * SCALE;
 
-pub const Y_GRADIENTS_2D: [f32; 8] = [
-    0.0,
-    SCALED_SQRT,
-    70.0,
-    SCALED_SQRT,
-    0.0,
-   -SCALED_SQRT,
-   -70.0,
-   -SCALED_SQRT,
-];
-
+const A: f32 = SCALE;
+const B: f32 = SCALED_SQRT;
+const C: f32 = 0.0;
+pub const X_GRADIENTS_2D: [f32; 8] = [ A,  B,  C, -B, -A, -B,  C,  B, ];
+pub const Y_GRADIENTS_2D: [f32; 8] = [ C,  B,  A,  B,  C, -B, -A, -B, ];
 
 // pub const X_GRADIENTS_2D: [f32; 8] = [
 //     1.4142135623730951,

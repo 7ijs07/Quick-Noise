@@ -55,7 +55,7 @@ impl Worley {
 
             // Threshold: 6
             let close_edge_lo = x_dist_lo.min(y_dist_lo) + ArchSimd::splat(2.0);
-            let close_edge_hi = x_dist_hi.min(y_dist_hi) - ArchSimd::splat(1.0);
+            let close_edge_hi = x_dist_hi.min(y_dist_hi) - one;
             let closest_edge_dist = close_edge_lo.min(close_edge_hi);
             let threshold = closest_edge_dist * closest_edge_dist;
 
