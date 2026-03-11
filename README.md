@@ -43,25 +43,25 @@ Results are measured in billions of points per second single-threaded for one no
 Batched noise processing is much more flexible than uniform grid, allowing for any arbitrary input and enabling
 techniques such as domain warping. Results are measured in millions of points per second.
 
-|   Library   | 2D Perlin AVX2 | 3D Perlin AVX2 |
-|-------------|----------------|----------------|
-| Quick-Noise | 980 M/s        | 304 M/s        |
-| FastNoise2  | 509 M/s        | 224 M/s        |
+|   Perlin    | 2D AVX2 | 3D AVX2 |
+|-------------|---------|---------|
+| Quick-Noise | 980 M/s | 304 M/s |
+| FastNoise2  | 509 M/s | 224 M/s |
 
-|   Library   | 2D Simplex AVX2 |
-|-------------|-----------------|
-| Quick-Noise | 638 M/s         |
-| FastNoise2  | 425 M/s         |
+|   Simplex   | 2D AVX2 |
+|-------------|---------|
+| Quick-Noise | 638 M/s |
+| FastNoise2  | 425 M/s |
 
-|   Library   | 2D Value AVX2   | 3D Value AVX2 |
-|-------------|-----------------|---------------|
-| Quick-Noise | 1,080 M/s       | 619 M/s       |
-| FastNoise2  | 704 M/s         | 419 M/s       |
+|    Value    | 2D AVX2   | 3D AVX2 |
+|-------------|-----------|---------|
+| Quick-Noise | 1,080 M/s | 619 M/s |
+| FastNoise2  | 704 M/s   | 419 M/s |
 
-|   Library   | 2D Cellular AVX2   |
-|-------------|--------------------|
-| Quick-Noise | 570 M/s            |
-| FastNoise2  | 156 M/s            |
+|   Cellular  | 2D AVX2 | 3D AVX2  |
+|-------------|---------|----------|
+| Quick-Noise | 570 M/s | 101 M/s  |
+| FastNoise2  | 156 M/s | 46.5 M/s |
 
 # Running
 
