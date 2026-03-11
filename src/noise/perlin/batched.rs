@@ -139,10 +139,10 @@ impl Perlin {
 
         // Hash constants.
         const BYTE_SHUFFLE: [u8; 64] = [
-            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
-            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
-            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
-            3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3, 0, 2, 1,
+            3,0,2,1, 7,4,6,5, 11,8,10,9, 15,12,14,13,
+            3,0,2,1, 7,4,6,5, 11,8,10,9, 15,12,14,13,
+            3,0,2,1, 7,4,6,5, 11,8,10,9, 15,12,14,13,
+            3,0,2,1, 7,4,6,5, 11,8,10,9, 15,12,14,13,
         ];
 
         const GRAD_TABLE: [f32; 4] = [
@@ -207,12 +207,12 @@ impl Perlin {
             let z2_shuf = z2.permute_8(shuffle_indices) ^ prime;
 
             let mix_tlf = x1_shuf * y1_shuf ^ z1_shuf;
-            let mix_trf = x1_shuf * y2_shuf ^ z1_shuf;
-            let mix_blf = x2_shuf * y1_shuf ^ z1_shuf;
-            let mix_brf = x2_shuf * y2_shuf ^ z1_shuf;
-            let mix_tlb = x1_shuf * y1_shuf ^ z2_shuf;
-            let mix_trb = x1_shuf * y2_shuf ^ z2_shuf;
-            let mix_blb = x2_shuf * y1_shuf ^ z2_shuf;
+            let mix_trf = x1_shuf * y1_shuf ^ z2_shuf;
+            let mix_blf = x1_shuf * y2_shuf ^ z1_shuf;
+            let mix_brf = x1_shuf * y2_shuf ^ z2_shuf;
+            let mix_tlb = x2_shuf * y1_shuf ^ z1_shuf;
+            let mix_trb = x2_shuf * y1_shuf ^ z2_shuf;
+            let mix_blb = x2_shuf * y2_shuf ^ z1_shuf;
             let mix_brb = x2_shuf * y2_shuf ^ z2_shuf;
 
             // Products: 88

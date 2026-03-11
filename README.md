@@ -53,10 +53,10 @@ techniques such as domain warping. Results are measured in millions of points pe
 | Quick-Noise | 638 M/s         |
 | FastNoise2  | 425 M/s         |
 
-|   Library   | 2D Value AVX2   |
-|-------------|-----------------|
-| Quick-Noise | 1,080 M/s       |
-| FastNoise2  | 704 M/s         |
+|   Library   | 2D Value AVX2   | 3D Value AVX2 |
+|-------------|-----------------|---------------|
+| Quick-Noise | 1,080 M/s       | 619 M/s       |
+| FastNoise2  | 704 M/s         | 419 M/s       |
 
 |   Library   | 2D Cellular AVX2   |
 |-------------|--------------------|
