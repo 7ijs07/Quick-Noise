@@ -41,17 +41,17 @@ Results are measured in billions of points per second single-threaded for one no
 ## Batched
 
 Batched noise processing is much more flexible than uniform grid, allowing for any arbitrary input and enabling
-techniques such as domain warping. Results are measured in millions of points per second.
+techniques such as domain warping. Results are measured in millions of points per second. Performance is still WIP.
 
 |   Perlin    | 2D AVX2 | 3D AVX2 |
 |-------------|---------|---------|
 | Quick-Noise | 980 M/s | 304 M/s |
 | FastNoise2  | 509 M/s | 224 M/s |
 
-|   Simplex   | 2D AVX2 |
-|-------------|---------|
-| Quick-Noise | 638 M/s |
-| FastNoise2  | 425 M/s |
+|   Simplex   | 2D AVX2 | 3D AVX2 |
+|-------------|---------|---------|
+| Quick-Noise | 638 M/s | 298 M/s |
+| FastNoise2  | 425 M/s | 241 M/s |
 
 |    Value    | 2D AVX2   | 3D AVX2 |
 |-------------|-----------|---------|
