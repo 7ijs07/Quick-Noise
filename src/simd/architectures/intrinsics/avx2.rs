@@ -175,3 +175,13 @@ impl SimdGatherImpl for Avx2 {
     // #[inline(always)] fn gather_32_from_64<T, const B: i32>(self, ptr: *const T) -> Self { self_from_const_op!(_mm256_i64gather_epi32, B, ptr, self) }
     #[inline(always)] fn gather_64_from_64<T, const B: i32>(self, ptr: *const T) -> Self { self_from_const_op!(_mm256_i64gather_epi64, B, ptr, self) }
 }
+
+impl SimdSqrtImpl for Avx2 {
+    #[inline(always)] fn sqrt_f64(self) -> Self { self_from_op!(_mm256_sqrt_pd, self) }
+    #[inline(always)] fn sqrt_f32(self) -> Self { self_from_op!(_mm256_sqrt_ps, self) }
+    #[inline(always)] fn rsqrt_f32(self) -> Self { self_from_op!(_mm256_rsqrt_ps, self) }
+}
+
+impl SimdAllBitsImpl for Avx2 {
+    #[inline(always)] fn all_zero(self) -> bool { execute_intrinsic!(_mm256_testz_si256, self, self) != 0}
+}

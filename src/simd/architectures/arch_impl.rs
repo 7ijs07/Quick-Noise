@@ -125,12 +125,14 @@ pub trait SimdArch:
     SimdPartialOrdImpl +
     SimdSplatImpl +
     SimdGatherImpl +
+    SimdSqrtImpl +
 {}
 
 pub trait MaskArch:
     Copy +
     Clone +
     SimdBitwiseImpl +
+    SimdAllBitsImpl +
 {}
 
 // === Arithmetic ===
@@ -315,4 +317,15 @@ pub trait SimdGatherImpl {
     // fn gather_64_from_32<T, const B: i32>(ptr: *const T, indicies: Self) -> Self;
     // fn gather_32_from_64<T, const B: i32>(ptr: *const T, indicies: Self) -> Self;
     fn gather_64_from_64<T, const B: i32>(self, ptr: *const T) -> Self;
+}
+
+pub trait SimdSqrtImpl {
+    fn sqrt_f64(self) -> Self;
+    fn sqrt_f32(self) -> Self;
+    // fn rsqrt_f64(self) -> Self;
+    fn rsqrt_f32(self) -> Self;
+}
+
+pub trait SimdAllBitsImpl {
+    fn all_zero(self) -> bool;
 }

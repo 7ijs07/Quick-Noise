@@ -110,6 +110,14 @@ pub trait SimdBlend: SimdContext {
     fn blend_32(self, other: Self, mask: SimdMask<Self::Element, Self::Family>) -> Self;
 }
 
+pub trait SimdSqrt {
+    fn sqrt(self) -> Self;
+}
+
+pub trait SimdRecipSqrt {
+    fn rsqrt(self) -> Self;
+}
+
 // pub trait SimdGather<T>: SimdContext {
 //     fn gather<S: SimdElement + SimdElement<BitWidth>, const N: usize>(self, slice: &[S; N]) -> SimdVec<S, Self::Family>;
 // }

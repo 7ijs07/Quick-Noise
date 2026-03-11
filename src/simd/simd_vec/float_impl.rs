@@ -232,3 +232,19 @@ impl<T: SimdFloat, F: SimdFamily> SimdVec<T, F> {
         t * t * t * t.mul_add(t.mul_sub(six, fifteen), ten)
     }
 }
+
+impl<T: SimdFloat, F: SimdFamily> SimdSqrt for SimdVec<T, F> {
+    fn sqrt(self) -> Self {
+        Self::new(match T::TYPE {
+            SimdType::F64 => self.data.sqrt_f64(),
+            SimdType::F32 => self.data.sqrt_f32(),
+            _ => unreachable!()
+        })
+    }
+}
+
+impl<F: SimdFamily> SimdRecipSqrt for SimdVec<f32, F> {
+    fn rsqrt(self) -> Self {
+        Self::new(self.data.rsqrt_f32())
+    }
+}

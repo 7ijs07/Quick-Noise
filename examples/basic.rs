@@ -25,10 +25,11 @@ fn main() {
     // grayscale::write_perlin_height_map_batched("noise_images/batched_pass.png", 32, 1, 1.0/32.0, 2.0, 0.5);
     // grayscale::write_simplex_height_map_batched("noise_images/simplex_batched.png", 32, 1, 1.0/64.0, 2.0, 0.5);
     // grayscale::write_value_height_map_batched("noise_images/value_batched.png", 32, 1, 1.0/32.0, 2.0, 0.5);
+    grayscale::write_worley_height_map_batched("noise_images/worley_batched.png", 32, 1, 1.0/64.0, 2.0, 0.5);
     // grayscale::write_perlin_height_map_batched_3d("noise_images/batched_pass_3d.png", 32, 1, 1.0/32.0, 2.0, 0.5);
 
     // grayscale::write_perlin_height_map_3d("noise_images/single_pass_3d.png", 32, 1, 32.0, 2.0, 0.5);
-    grayscale::write_perlin_height_map("noise_images/single_pass.png", 32, 1, 32.0, 2.0, 0.5);
+    // grayscale::write_perlin_height_map("noise_images/single_pass.png", 32, 1, 32.0, 2.0, 0.5);
 
     // grayscale::write_perlin_height_map("noise_images/glossy.png", 32, 11, 256.0, 1.5, 0.7);
     // grayscale::write_perlin_height_map("noise_images/chiseled.png", 32, 6, 256.0, 2.0, 0.8);

@@ -58,6 +58,11 @@ techniques such as domain warping. Results are measured in millions of points pe
 | Quick-Noise | 1,080 M/s       |
 | FastNoise2  | 704 M/s         |
 
+|   Library   | 2D Cellular AVX2   |
+|-------------|--------------------|
+| Quick-Noise | 570 M/s            |
+| FastNoise2  | 156 M/s            |
+
 # Running
 
 Height maps can be generated in `examples/basic.rs`. To run these examples, use:

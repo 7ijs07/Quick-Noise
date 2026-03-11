@@ -1,3 +1,4 @@
+use crate::simd::architectures::arch_impl::SimdAllBitsImpl;
 use crate::simd::architectures::arch_impl::SimdFamily;
 use crate::simd::traits::*;
 use std::fmt::Debug;
@@ -23,5 +24,10 @@ impl<T: SimdElement, F: SimdFamily> SimdMask<T, F> {
     #[inline(always)]
     pub fn raw_cast<S: SimdElement>(self) -> SimdMask<S, F> {
         SimdMask::new(self.data)
+    }
+
+    #[inline(always)]
+    pub fn all_false(self) -> bool {
+        self.data.all_zero()
     }
 }

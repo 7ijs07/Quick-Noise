@@ -3,6 +3,7 @@ use fastnoise2::Node;
 use quick_noise::perlin::{Octave2D, Octave3D, Perlin, PerlinMap, PerlinVol};
 use quick_noise::simplex::Simplex;
 use quick_noise::value::Value;
+use quick_noise::worley::Worley;
 const SCALES: [f32; 11] = [64.0, 48.0, 32.0, 24.0, 16.0, 12.0, 8.0, 6.0, 4.0, 3.0, 2.0];
 
 fn perlin_2d_benchmark(c: &mut Criterion) {
@@ -85,6 +86,29 @@ fn value_2d_benchmark_batch(c: &mut Criterion) {
 
         b.iter(|| {
             value.batched_2d(&mut output, &x_array, &y_array, scale, 1.0, 1, 0.0)
+        });
+    });
+}
+
+
+fn worley_2d_benchmark_batch(c: &mut Criterion) {
+    let mut group = c.benchmark_group("worley_noise_2d_batch");
+    let scale = 1.0 / 32.0;
+    group.throughput(Throughput::Elements(1024)); 
+    group.bench_function(format!("scale: {scale}"), |b| {
+        let mut worley = Worley::new(0);
+        let mut x_array = PerlinMap::new_uninit();
+        let mut y_array = PerlinMap::new_uninit();
+        let mut output = PerlinMap::new_uninit();
+        for x in 0..32 {
+            for y in 0..32 {
+                x_array[x * 32 + y] = x as f32;
+                y_array[x * 32 + y] = y as f32;
+            }
+        }
+
+        b.iter(|| {
+            worley.batched_2d(&mut output, &x_array, &y_array, scale, 1.0, 1, 0.0)
         });
     });
 }
@@ -203,6 +227,35 @@ fn value_2d_benchmark_fn2(c: &mut Criterion) {
     });
 }
 
+fn cellular_2d_benchmark_fn2(c: &mut Criterion) {
+    let mut group = c.benchmark_group("cellular_noise_2d_fn2");
+    let scale = 32.0;
+    group.throughput(Throughput::Elements(1024)); 
+    group.bench_function(format!("scale: {scale}"), |b| {
+        let node = Node::from_name("cellulardistance").unwrap();
+        let mut array = [0f32; 1024];
+        let mut i = 0;
+        let scale = 1f32 / scale as f32;
+        b.iter(|| {
+            i = i + 1 & 0xFFFFFF;
+            let offset = (i * 32) as f32;
+            unsafe {
+                node.gen_uniform_grid_2d_unchecked(
+                    &mut array,
+                    offset,
+                    offset,
+                    32,
+                    32,
+                    scale,
+                    scale,
+                    0
+                );
+            }
+        });
+    });
+}
+
+
 fn perlin_3d_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("perlin_noise_3d");
     for scale in SCALES {
@@ -260,8 +313,9 @@ fn perlin_3d_benchmark_fn2(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, perlin_2d_benchmark, perlin_3d_benchmark, perlin_2d_benchmark_fn2, perlin_3d_benchmark_fn2);
+// criterion_group!(benches, perlin_2d_benchmark, perlin_3d_benchmark, perlin_2d_benchmark_fn2, perlin_3d_benchmark_fn2);
 // criterion_group!(benches, perlin_2d_benchmark_batch, perlin_2d_benchmark_fn2, perlin_3d_benchmark_batch, perlin_3d_benchmark_fn2);
 // criterion_group!(benches, simplex_2d_benchmark_batch, simplex_2d_benchmark_fn2);
 // criterion_group!(benches, value_2d_benchmark_batch, perlin_2d_benchmark_batch, simplex_2d_benchmark_batch);
+criterion_group!(benches, worley_2d_benchmark_batch, cellular_2d_benchmark_fn2);
 criterion_main!(benches);
