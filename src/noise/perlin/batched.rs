@@ -79,10 +79,10 @@ impl Perlin {
             let x2_shuf = x2.permute_8(shuffle_indices) ^ prime;
             let y2_shuf = y2.permute_8(shuffle_indices) ^ prime;
 
-            let mix_tl = (x1_shuf * y1_shuf) ^ x1_shuf;
-            let mix_tr = (x1_shuf * y2_shuf) ^ x1_shuf;
-            let mix_bl = (x2_shuf * y1_shuf) ^ x2_shuf;
-            let mix_br = (x2_shuf * y2_shuf) ^ x2_shuf;
+            let mix_tl = x1_shuf * y1_shuf;
+            let mix_tr = x1_shuf * y2_shuf;
+            let mix_bl = x2_shuf * y1_shuf;
+            let mix_br = x2_shuf * y2_shuf;
 
             // Permute Gather: 12
             let indices_tl = mix_tl >> 29;
@@ -131,16 +131,9 @@ impl Perlin {
         let ten: ArchSimd<f32> = ArchSimd::splat(10.0);
         let fifteen: ArchSimd<f32> = ArchSimd::splat(15.0);
         let one: ArchSimd<f32> = ArchSimd::splat(1.0);
-        let zero: ArchSimd<f32> = ArchSimd::splat(0.0);
-        let one_int: ArchSimd<u32> = ArchSimd::splat(1);
-        let sixteen_int: ArchSimd<u32> = ArchSimd::splat(16);
         let three_int: ArchSimd<u32> = ArchSimd::splat(3);
 
-        // let c1: ArchSimd<u32> = ArchSimd::splat(0x30FF20AA);
-        // let c2: ArchSimd<u32> = ArchSimd::splat(0xFF0FCA0C);
-        // let c3: ArchSimd<u32> = ArchSimd::splat(0xCFF08CC0);
-
-        let c1: ArchSimd<u32> = ArchSimd::splat(0x9009999);
+        let c1: ArchSimd<u32> = ArchSimd::splat(0x09009999);
         let c2: ArchSimd<u32> = ArchSimd::splat(0xA59900A5);
         let c3: ArchSimd<u32> = ArchSimd::splat(0x90A5A500);
 

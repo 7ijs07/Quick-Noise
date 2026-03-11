@@ -41,7 +41,7 @@ impl Perlin {
         let end_index = y_num_loops as usize + 1;
         for i in (0..end_index).step_by(ArchSimd::<f32>::LANES) {
             let y_shuf = y_vec.permute_8(shuffle_indices) ^ prime;
-            let indices: ArchSimd<u32> = ((x_shuf * y_shuf) ^ x_shuf) >> 29;
+            let indices: ArchSimd<u32> = (x_shuf * y_shuf) >> 29;
             grad_array.store_simd(i, indices);
             y_vec += y_vec_stride;
         }

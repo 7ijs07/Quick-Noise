@@ -243,6 +243,16 @@ impl<T: SimdFloat, F: SimdFamily> SimdSqrt for SimdVec<T, F> {
     }
 }
 
+impl<T: SimdFloat, F: SimdFamily> SimdVec<T, F> {
+    fn abs(self) -> Self {
+        Self::new(match T::TYPE {
+            SimdType::F64 => SimdVec::<u64, F>::splat(T::SIGN_MASK as u64).data.and_not(self.data),
+            SimdType::F32 => SimdVec::<u32, F>::splat(T::SIGN_MASK as u32).data.and_not(self.data),
+            _ => unreachable!()
+        })
+    }
+}
+
 impl<F: SimdFamily> SimdRecipSqrt for SimdVec<f32, F> {
     fn rsqrt(self) -> Self {
         Self::new(self.data.rsqrt_f32())

@@ -211,10 +211,12 @@ impl SimdInteger for u32 { type Type = Unsigned; }
 impl SimdInteger for u16 { type Type = Unsigned; }
 impl SimdInteger for u8 { type Type = Unsigned; }
 
-pub trait SimdFloat: SimdElement + HasSigned + HasUnsigned + SimdMulType{}
+pub trait SimdFloat: SimdElement + HasSigned + HasUnsigned + SimdMulType {
+    const SIGN_MASK: usize;
+}
 
-impl SimdFloat for f64 {}
-impl SimdFloat for f32 {}
+impl SimdFloat for f64 { const SIGN_MASK: usize = 0x8000000000000000; }
+impl SimdFloat for f32 { const SIGN_MASK: usize = 0x80000000; }
 
 pub trait SimdWideType: SimdElement {}
 impl SimdWideType for f64 {}

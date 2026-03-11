@@ -96,10 +96,11 @@ impl Simplex {
             let y_dist_mi_offset = subbed_unskew.blend_32(unskew, triangle_mask);
             let x_dist_mi = x_dist_lo + x_dist_mi_offset;
             let y_dist_mi = y_dist_lo + y_dist_mi_offset;
+            
             let x_dist_hi = x_dist_lo + hi_skew_offset;
             let y_dist_hi = y_dist_lo + hi_skew_offset;
 
-            // Hash: 19
+            // Hash: 22
             let x1: ArchSimd<u32> = x_grid.cast_int_trunc().raw_cast() * channel_seed;
             let y1: ArchSimd<u32> = y_grid.cast_int_trunc().raw_cast() * channel_seed;
             let x2 = x1 + channel_seed;
@@ -111,11 +112,11 @@ impl Simplex {
             let y2_shuf = y2.permute_8(shuffle_indices) ^ prime;
 
             let mix_lo = (x1_shuf * y1_shuf) ^ x1_shuf;
-            let mix_mi_1 = (x1_shuf * y2_shuf) ^ x1_shuf;
-            let mix_mi_2 = (x2_shuf * y1_shuf) ^ x2_shuf;
             let mix_hi = (x2_shuf * y2_shuf) ^ x2_shuf;
 
-            let mix_mi = mix_mi_1.blend_32(mix_mi_2, triangle_mask.raw_cast());
+            let x_shuf_mi = x1_shuf.blend_32(x2_shuf, triangle_mask.raw_cast());
+            let y_shuf_mi = y2_shuf.blend_32(y1_shuf, triangle_mask.raw_cast());
+            let mix_mi = (x_shuf_mi * y_shuf_mi) ^ x_shuf_mi;
 
             // Gradient lookup: 9
             let indices_lo = mix_lo >> 29;
